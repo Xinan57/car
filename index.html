@@ -2058,4 +2058,654 @@
         }
 
         function loadCheckbook() {
-            const
+            const carId = document.getElementById('carSelectCheckbook').value;
+            const container = document.getElementById('checkbookContent');
+            
+            if (!carId) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📖</div>
+                        <h3>Wähle ein Fahrzeug aus</h3>
+                        <p>Um das Checkheft zu sehen, wähle bitte ein Auto aus deiner Garage.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const car = cars.find(c => c.id === parseInt(carId));
+            const entries = serviceEntries
+                .filter(e => e.carId === parseInt(carId))
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            const typeLabels = {
+                'inspektion': '🔧 Inspektion',
+                'oelwechsel': '🛢️ Ölwechsel',
+                'reifen': '🚗 Reifenwechsel',
+                'bremsen': '🛑 Bremsenservice',
+                'tuev': '✓ TÜV/HU',
+                'klima': '❄️ Klimaservice',
+                'achsvermessung': '📐 Achsvermessung',
+                'getriebe': '⚙️ Getriebe',
+                'unfall': '💥 Unfallreparatur',
+                'reparatur': '🔩 Reparatur',
+                'tuning': '🏎️ Tuning',
+                'sonstiges': '📋 Sonstiges'
+            };
+            
+            container.innerHTML = `
+                <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h3>${car.brand} ${car.model}</h3>
+                    <button class="btn btn-primary" onclick="openServiceModal(${car.id})">
+                        + Neuer Eintrag
+                    </button>
+                </div>
+                ${entries.length === 0 ? '<p>Noch keine Einträge vorhanden.</p>' : 
+                    entries.map(e => `
+                        <div class="checkbook-entry">
+                            <div class="entry-header">
+                                <span class="entry-date">${new Date(e.date).toLocaleDateString('de-DE')}</span>
+                                <span class="entry-type">${typeLabels[e.type] || e.type}</span>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>${e.mileage.toLocaleString()} km</strong>
+                                ${e.workshop ? `• ${e.workshop}` : ''}
+                            </div>
+                            ${e.desc ? `<div style="color: #6b7280; margin-bottom: 10px;">${e.desc}</div>` : ''}
+                            ${e.cost > 0 ? `<div style="font-weight: bold; color: var(--primary);">${e.cost.toFixed(2)} €</div>` : ''}
+                        </div>
+                    `).join('')}
+            `;
+        }
+
+        // Costs Analysis
+        function loadCosts() {
+            const carId = document.getElementById('carSelectCosts').value;
+            
+            let relevantEntries = serviceEntries;
+            let relevantFuel = fuelEntries;
+            
+            if (carId) {
+                relevantEntries = serviceEntries.filter(e => e.carId === parseInt(carId));
+                relevantFuel = fuelEntries.filter(f => f.carId === parseInt(carId));
+            }
+            
+            const totalServiceCosts = relevantEntries.reduce((sum, e) => sum + (parseFloat(e.cost) || 0), 0);
+            const totalFuelCosts = relevantFuel.reduce((sum, f) => sum + (parseFloat(f.totalCost) || 0), 0);
+            const totalCosts = totalServiceCosts + totalFuelCosts;
+            
+            const thisYear = new Date().getFullYear();
+            const yearServiceCosts = relevantEntries
+                .filter(e => new Date(e.date).getFullYear() === thisYear)
+                .reduce((sum, e) => sum + (parseFloat(e.cost) || 0), 0);
+            const yearFuelCosts = relevantFuel
+                .filter(f => new Date(f.date).getFullYear() === thisYear)
+                .reduce((sum, f) => sum + (parseFloat(f.totalCost) || 0), 0);
+            const yearCosts = yearServiceCosts + yearFuelCosts;
+            
+            // Calculate cost per km
+            let costPerKm = 0;
+            let costPerMonth = 0;
+            
+            if (carId) {
+                const car = cars.find(c => c.id === parseInt(carId));
+                if (car && car.mileage > 0) {
+                    costPerKm = totalCosts / car.mileage;
+                }
+                
+                // Calculate months since purchase or first entry
+                const firstEntry = relevantEntries.concat(relevantFuel)
+                    .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
+                if (firstEntry) {
+                    const months = Math.max(1, Math.ceil((new Date() - new Date(firstEntry.date)) / (1000 * 60 * 60 * 24 * 30)));
+                    costPerMonth = totalCosts / months;
+                }
+            }
+            
+            document.getElementById('totalCosts').textContent = totalCosts.toFixed(0) + ' €';
+            document.getElementById('yearCosts').textContent = yearCosts.toFixed(0) + ' €';
+            document.getElementById('costPerKm').textContent = costPerKm.toFixed(2) + ' €';
+            document.getElementById('costPerMonth').textContent = costPerMonth.toFixed(0) + ' €';
+            
+            drawCostChart(relevantEntries);
+            updateFuelStats(carId);
+            loadCostHistory(relevantEntries);
+        }
+
+        function drawCostChart(entries) {
+            const canvas = document.getElementById('costsCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Group by type
+            const costsByType = {};
+            entries.forEach(e => {
+                costsByType[e.type] = (costsByType[e.type] || 0) + (parseFloat(e.cost) || 0);
+            });
+            
+            const types = Object.keys(costsByType);
+            const values = Object.values(costsByType);
+            const total = values.reduce((a, b) => a + b, 0);
+            
+            if (total === 0) {
+                ctx.fillStyle = '#9ca3af';
+                ctx.font = '16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Keine Kostendaten verfügbar', canvas.width/2, canvas.height/2);
+                return;
+            }
+            
+            // Draw pie chart
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 100;
+            
+            const colors = ['#2563eb', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+            let currentAngle = 0;
+            
+            const typeLabels = {
+                'inspektion': 'Inspektion',
+                'oelwechsel': 'Ölwechsel',
+                'reifen': 'Reifen',
+                'bremsen': 'Bremsen',
+                'tuev': 'TÜV',
+                'klima': 'Klima',
+                'reparatur': 'Reparatur',
+                'unfall': 'Unfall',
+                'sonstiges': 'Sonst.'
+            };
+            
+            types.forEach((type, i) => {
+                const sliceAngle = (values[i] / total) * 2 * Math.PI;
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+                ctx.closePath();
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.fill();
+                
+                // Label
+                const labelAngle = currentAngle + sliceAngle / 2;
+                const labelX = centerX + Math.cos(labelAngle) * (radius + 30);
+                const labelY = centerY + Math.sin(labelAngle) * (radius + 30);
+                
+                ctx.fillStyle = '#1f2937';
+                ctx.font = '12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(typeLabels[type] || type, labelX, labelY);
+                ctx.fillText(values[i].toFixed(0) + '€', labelX, labelY + 15);
+                
+                currentAngle += sliceAngle;
+            });
+        }
+
+        function loadCostHistory(entries) {
+            const container = document.getElementById('costHistoryList');
+            const sorted = entries.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            container.innerHTML = sorted.map(e => `
+                <div class="trip-item">
+                    <div>
+                        <strong>${new Date(e.date).toLocaleDateString('de-DE')}</strong>
+                        <div style="color: #666; font-size: 14px;">${e.desc || 'Service'}</div>
+                    </div>
+                    <div style="font-weight: bold; color: var(--primary);">${e.cost.toFixed(2)} €</div>
+                </div>
+            `).join('') || '<p>Keine Einträge vorhanden.</p>';
+        }
+
+        function updateFuelStats(carId) {
+            if (!carId) {
+                document.getElementById('avgConsumption').textContent = '-- l/100km';
+                document.getElementById('lastConsumption').textContent = '-- l/100km';
+                document.getElementById('totalFuel').textContent = '-- L';
+                document.getElementById('fuelCosts').textContent = '-- €';
+                return;
+            }
+            
+            const entries = fuelEntries.filter(f => f.carId === parseInt(carId));
+            
+            if (entries.length === 0) {
+                document.getElementById('avgConsumption').textContent = '-- l/100km';
+                document.getElementById('lastConsumption').textContent = '-- l/100km';
+                document.getElementById('totalFuel').textContent = '-- L';
+                document.getElementById('fuelCosts').textContent = '-- €';
+                return;
+            }
+            
+            const totalLiters = entries.reduce((sum, e) => sum + e.liters, 0);
+            const totalCosts = entries.reduce((sum, e) => sum + (e.totalCost || 0), 0);
+            const avgConsumption = entries.reduce((sum, e) => sum + e.consumption, 0) / entries.length;
+            const lastConsumption = entries[entries.length - 1].consumption;
+            
+            document.getElementById('avgConsumption').textContent = avgConsumption.toFixed(1) + ' l/100km';
+            document.getElementById('lastConsumption').textContent = lastConsumption.toFixed(1) + ' l/100km';
+            document.getElementById('totalFuel').textContent = totalLiters.toFixed(0) + ' L';
+            document.getElementById('fuelCosts').textContent = totalCosts.toFixed(0) + ' €';
+        }
+
+        // Fuel Management
+        function openFuelModal() {
+            if (cars.length === 0) {
+                showToast('Bitte zuerst ein Fahrzeug hinzufügen!');
+                return;
+            }
+            document.getElementById('fuelDate').valueAsDate = new Date();
+            openModal('addFuelModal');
+        }
+
+        function calcConsumption() {
+            const liters = parseFloat(document.getElementById('fuelLiters').value) || 0;
+            const price = parseFloat(document.getElementById('fuelPrice').value) || 0;
+            
+            if (liters > 0 && price > 0) {
+                document.getElementById('fuelTotalCost').value = (liters * price).toFixed(2);
+            }
+            
+            // Calculate consumption if we have previous entry
+            const carId = document.getElementById('fuelCarId').value;
+            const currentMileage = parseInt(document.getElementById('fuelMileage').value) || 0;
+            
+            if (carId && currentMileage > 0 && liters > 0) {
+                const previousEntries = fuelEntries
+                    .filter(f => f.carId === parseInt(carId) && f.mileage < currentMileage)
+                    .sort((a, b) => b.mileage - a.mileage);
+                
+                if (previousEntries.length > 0) {
+                    const kmDriven = currentMileage - previousEntries[0].mileage;
+                    const consumption = (liters / kmDriven) * 100;
+                    document.getElementById('calcConsumption').textContent = consumption.toFixed(1) + ' l/100km';
+                }
+            }
+        }
+
+        function reverseCalc() {
+            const total = parseFloat(document.getElementById('fuelTotalCost').value) || 0;
+            const liters = parseFloat(document.getElementById('fuelLiters').value) || 0;
+            
+            if (total > 0 && liters > 0) {
+                document.getElementById('fuelPrice').value = (total / liters).toFixed(3);
+            }
+        }
+
+        function saveFuelEntry(event) {
+            event.preventDefault();
+            
+            const carId = parseInt(document.getElementById('fuelCarId').value);
+            const mileage = parseInt(document.getElementById('fuelMileage').value);
+            const liters = parseFloat(document.getElementById('fuelLiters').value);
+            
+            // Calculate consumption
+            let consumption = 0;
+            const previousEntries = fuelEntries
+                .filter(f => f.carId === carId && f.mileage < mileage)
+                .sort((a, b) => b.mileage - a.mileage);
+            
+            if (previousEntries.length > 0) {
+                const kmDriven = mileage - previousEntries[0].mileage;
+                consumption = (liters / kmDriven) * 100;
+            }
+            
+            const entry = {
+                id: Date.now(),
+                carId: carId,
+                date: document.getElementById('fuelDate').value,
+                mileage: mileage,
+                liters: liters,
+                pricePerLiter: parseFloat(document.getElementById('fuelPrice').value) || 0,
+                totalCost: parseFloat(document.getElementById('fuelTotalCost').value) || 0,
+                station: document.getElementById('fuelStation').value,
+                fuelType: document.getElementById('fuelType').value,
+                consumption: consumption
+            };
+            
+            fuelEntries.push(entry);
+            localStorage.setItem('fuelEntries', JSON.stringify(fuelEntries));
+            
+            // Update car mileage
+            const car = cars.find(c => c.id === carId);
+            if (car && mileage > car.mileage) {
+                car.mileage = mileage;
+                localStorage.setItem('cars', JSON.stringify(cars));
+                renderGarage();
+            }
+            
+            closeModal('addFuelModal');
+            document.getElementById('addFuelForm').reset();
+            document.getElementById('calcConsumption').textContent = '-- l/100km';
+            
+            if (document.getElementById('costs').classList.contains('active')) {
+                loadCosts();
+            }
+            showToast('Tankfüllung gespeichert!');
+        }
+
+        // Trip Management
+        function openTripModal() {
+            if (cars.length === 0) {
+                showToast('Bitte zuerst ein Fahrzeug hinzufügen!');
+                return;
+            }
+            document.getElementById('tripDate').valueAsDate = new Date();
+            openModal('addTripModal');
+        }
+
+        function calcTripKm() {
+            const start = parseInt(document.getElementById('tripKmStart').value) || 0;
+            const end = parseInt(document.getElementById('tripKmEnd').value) || 0;
+            const distance = Math.max(0, end - start);
+            
+            document.getElementById('tripDistance').textContent = distance;
+            document.getElementById('tripProgress').style.width = Math.min(100, (distance / 1000) * 100) + '%';
+        }
+
+        function saveTrip(event) {
+            event.preventDefault();
+            
+            const entry = {
+                id: Date.now(),
+                carId: parseInt(document.getElementById('tripCarId').value),
+                date: document.getElementById('tripDate').value,
+                type: document.getElementById('tripType').value,
+                start: document.getElementById('tripStart').value,
+                end: document.getElementById('tripEnd').value,
+                kmStart: parseInt(document.getElementById('tripKmStart').value),
+                kmEnd: parseInt(document.getElementById('tripKmEnd').value),
+                distance: parseInt(document.getElementById('tripKmEnd').value) - parseInt(document.getElementById('tripKmStart').value),
+                purpose: document.getElementById('tripPurpose').value
+            };
+            
+            trips.push(entry);
+            localStorage.setItem('trips', JSON.stringify(trips));
+            
+            closeModal('addTripModal');
+            document.getElementById('addTripForm').reset();
+            document.getElementById('tripDistance').textContent = '0';
+            document.getElementById('tripProgress').style.width = '0%';
+            
+            if (document.getElementById('trips').classList.contains('active')) {
+                loadTrips();
+            }
+            showToast('Fahrt gespeichert!');
+        }
+
+        function loadTrips() {
+            const carId = document.getElementById('tripCarSelect').value;
+            const typeFilter = document.getElementById('tripTypeFilter').value;
+            
+            let filtered = trips;
+            if (carId) filtered = filtered.filter(t => t.carId === parseInt(carId));
+            if (typeFilter) filtered = filtered.filter(t => t.type === typeFilter);
+            
+            const sorted = filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            const totalKm = filtered.reduce((sum, t) => sum + t.distance, 0);
+            const businessKm = filtered.filter(t => t.type === 'business').reduce((sum, t) => sum + t.distance, 0);
+            const privateKm = filtered.filter(t => t.type === 'private').reduce((sum, t) => sum + t.distance, 0);
+            
+            document.getElementById('totalTripKm').textContent = totalKm.toLocaleString();
+            document.getElementById('businessKm').textContent = businessKm.toLocaleString();
+            document.getElementById('privateKm').textContent = privateKm.toLocaleString();
+            
+            document.getElementById('tripList').innerHTML = sorted.map(t => `
+                <div class="trip-item">
+                    <div>
+                        <strong>${new Date(t.date).toLocaleDateString('de-DE')}</strong>
+                        <div style="color: #666; font-size: 14px;">
+                            ${t.start} → ${t.end} (${t.distance} km)
+                            ${t.purpose ? '<br>Zweck: ' + t.purpose : ''}
+                        </div>
+                        <span style="display: inline-block; margin-top: 5px; padding: 2px 8px; background: ${t.type === 'business' ? '#dbeafe' : '#fce7f3'}; color: ${t.type === 'business' ? '#1d4ed8' : '#be185d'}; border-radius: 12px; font-size: 12px;">
+                            ${t.type === 'business' ? 'Geschäftlich' : 'Privat'}
+                        </span>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: bold;">${cars.find(c => c.id === t.carId)?.brand || ''}</div>
+                        <div style="font-size: 12px; color: #666;">${t.kmStart} - ${t.kmEnd}</div>
+                    </div>
+                </div>
+            `).join('') || '<p>Keine Fahrten vorhanden.</p>';
+        }
+
+        function exportTrips() {
+            const carId = document.getElementById('tripCarSelect').value;
+            let filtered = trips;
+            if (carId) filtered = filtered.filter(t => t.carId === parseInt(carId));
+            
+            let csv = 'Datum;Fahrzeug;Art;Start;Ziel;Distanz;Zweck\n';
+            filtered.forEach(t => {
+                const car = cars.find(c => c.id === t.carId);
+                csv += `${t.date};${car?.brand || ''} ${car?.model || ''};${t.type === 'business' ? 'Geschäftlich' : 'Privat'};${t.start};${t.end};${t.distance};${t.purpose}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'fahrtenbuch.csv';
+            link.click();
+            
+            showToast('Fahrtenbuch exportiert!');
+        }
+
+        // Document Management
+        function loadDocuments() {
+            const grid = document.getElementById('documentGrid');
+            
+            grid.innerHTML = documents.map(doc => {
+                const car = cars.find(c => c.id === doc.carId);
+                const isExpiring = doc.expiry && new Date(doc.expiry) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                
+                return `
+                    <div class="document-card" style="${isExpiring ? 'border: 2px solid var(--danger);' : ''}">
+                        <div class="document-icon">${getDocIcon(doc.type)}</div>
+                        <div style="font-weight: 600; margin-bottom: 5px;">${getDocTypeName(doc.type)}</div>
+                        <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                            ${car?.brand || ''} ${car?.model || ''}
+                        </div>
+                        ${doc.expiry ? `<div style="font-size: 12px; color: ${isExpiring ? 'var(--danger)' : '#666'};">
+                            ${isExpiring ? '⚠️ ' : ''}Ablauf: ${new Date(doc.expiry).toLocaleDateString('de-DE')}
+                        </div>` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            // Load expiring docs
+            const expiring = documents.filter(d => d.expiry && new Date(d.expiry) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+            document.getElementById('expiringDocs').innerHTML = expiring.map(doc => {
+                const car = cars.find(c => c.id === doc.carId);
+                const daysLeft = Math.ceil((new Date(doc.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                
+                return `
+                    <div class="notification-item ${daysLeft < 0 ? 'warning' : ''}">
+                        <strong>${getDocTypeName(doc.type)}</strong> für ${car?.brand || ''} ${car?.model || ''}<br>
+                        ${daysLeft < 0 ? 'Abgelaufen seit' : 'Läuft ab in'} ${Math.abs(daysLeft)} Tagen
+                    </div>
+                `;
+            }).join('') || '<p>Keine ablaufenden Dokumente.</p>';
+        }
+
+        function getDocIcon(type) {
+            const icons = {
+                'zulassung': '📋',
+                'brief': '📄',
+                'versicherung': '🛡️',
+                'tuev': '✓',
+                'rechnung': '💶',
+                'vertrag': '📝',
+                'service': '🔧',
+                'sonstiges': '📎'
+            };
+            return icons[type] || '📄';
+        }
+
+        function getDocTypeName(type) {
+            const names = {
+                'zulassung': 'Fahrzeugschein',
+                'brief': 'Fahrzeugbrief',
+                'versicherung': 'Versicherung',
+                'tuev': 'TÜV-Bericht',
+                'rechnung': 'Rechnung',
+                'vertrag': 'Vertrag',
+                'service': 'Serviceheft',
+                'sonstiges': 'Sonstiges'
+            };
+            return names[type] || type;
+        }
+
+        function saveDocument(event) {
+            event.preventDefault();
+            
+            const fileInput = document.getElementById('docFile');
+            const file = fileInput.files[0];
+            
+            // In a real app, you would upload to server here
+            // For demo, we just store metadata
+            const doc = {
+                id: Date.now(),
+                carId: parseInt(document.getElementById('docCarId').value),
+                type: document.getElementById('docType').value,
+                expiry: document.getElementById('docExpiry').value,
+                reminder: parseInt(document.getElementById('docReminder').value),
+                notes: document.getElementById('docNotes').value,
+                filename: file.name,
+                uploaded: new Date().toISOString()
+            };
+            
+            documents.push(doc);
+            localStorage.setItem('documents', JSON.stringify(documents));
+            
+            closeModal('uploadDocModal');
+            document.getElementById('uploadDocForm').reset();
+            loadDocuments();
+            checkReminders();
+            showToast('Dokument hochgeladen!');
+        }
+
+        // Notifications & Reminders
+        function checkReminders() {
+            const notifications = [];
+            const today = new Date();
+            
+            // Check TÜV dates
+            cars.forEach(car => {
+                if (car.tuv) {
+                    const tuvDate = new Date(car.tuv);
+                    const daysLeft = Math.ceil((tuvDate - today) / (1000 * 60 * 60 * 24));
+                    
+                    if (daysLeft < 30 && daysLeft > -1) {
+                        notifications.push({
+                            type: 'warning',
+                            text: `TÜV für ${car.brand} ${car.model} läuft in ${daysLeft} Tagen ab!`
+                        });
+                    } else if (daysLeft < 0) {
+                        notifications.push({
+                            type: 'danger',
+                            text: `TÜV für ${car.brand} ${car.model} ist abgelaufen!`
+                        });
+                    }
+                }
+            });
+            
+            // Check document expiry
+            documents.forEach(doc => {
+                if (doc.expiry && doc.reminder > 0) {
+                    const expiryDate = new Date(doc.expiry);
+                    const reminderDate = new Date(expiryDate.getTime() - doc.reminder * 24 * 60 * 60 * 1000);
+                    
+                    if (today >= reminderDate && today < expiryDate) {
+                        const car = cars.find(c => c.id === doc.carId);
+                        notifications.push({
+                            type: 'info',
+                            text: `${getDocTypeName(doc.type)} für ${car?.brand || ''} läuft bald ab`
+                        });
+                    }
+                }
+            });
+            
+            // Update notification badge
+            const badge = document.getElementById('notifCount');
+            if (notifications.length > 0) {
+                badge.style.display = 'flex';
+                badge.textContent = notifications.length;
+            } else {
+                badge.style.display = 'none';
+            }
+            
+            // Update notification panel
+            document.getElementById('notificationList').innerHTML = notifications.map(n => `
+                <div class="notification-item ${n.type === 'danger' ? 'warning' : n.type === 'success' ? 'success' : ''}">
+                    ${n.text}
+                </div>
+            `).join('') || '<p>Keine aktuellen Erinnerungen.</p>';
+        }
+
+        function toggleNotifications() {
+            const panel = document.getElementById('notificationPanel');
+            panel.classList.toggle('show');
+        }
+
+        // Workshop Finder
+        function findWorkshops(type) {
+            const results = document.getElementById('workshopResults');
+            
+            const workshops = type === 'atu' ? [
+                { name: 'ATU München Sendling', address: 'Meindlstraße 12, 81379 München', phone: '089 12345678', distance: '2.3 km', rating: 4.2 },
+                { name: 'ATU München Pasing', address: 'Landsberger Straße 456, 80689 München', phone: '089 87654321', distance: '5.1 km', rating: 4.0 },
+                { name: 'ATU München Nord', address: 'Schleißheimer Straße 123, 80809 München', phone: '089 11223344', distance: '8.7 km', rating: 4.3 }
+            ] : [
+                { name: 'PIT STOP München West', address: 'Ridlerstraße 45, 80339 München', phone: '089 55556666', distance: '3.2 km', rating: 4.5 },
+                { name: 'PIT STOP München Ost', address: 'Einsteinstraße 88, 81675 München', phone: '089 77778888', distance: '6.5 km', rating: 4.4 },
+                { name: 'PIT STOP München Süd', address: 'Plinganserstraße 67, 81369 München', phone: '089 99990000', distance: '4.8 km', rating: 4.6 }
+            ];
+            
+            results.innerHTML = `
+                <h3 style="margin-bottom: 20px;">${type === 'atu' ? 'ATU' : 'PIT STOP'} Filialen in deiner Nähe</h3>
+                <div style="display: grid; gap: 15px;">
+                    ${workshops.map(w => `
+                        <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div>
+                                    <h4 style="margin-bottom: 5px;">${w.name}</h4>
+                                    <p style="color: #6b7280; font-size: 14px;">📍 ${w.address}</p>
+                                    <p style="color: #6b7280; font-size: 14px;">📞 ${w.phone}</p>
+                                    <div class="rating" style="margin-top: 5px;">${'⭐'.repeat(Math.floor(w.rating))} (${w.rating})</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="background: #dbeafe; color: #1d4ed8; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 600;">
+                                        ${w.distance}
+                                    </span>
+                                    <button class="btn btn-primary" style="margin-top: 10px; font-size: 14px; padding: 8px 16px;" onclick="bookAppointment('${w.name}')">
+                                        Termin buchen
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function bookAppointment(workshop) {
+            showToast(`Termin bei ${workshop} angefragt! (Demo)`);
+        }
+
+        // Utility
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Close modals on outside click
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+            if (!event.target.closest('.nav-btn') && !event.target.closest('#notificationPanel')) {
+                document.getElementById('notificationPanel').classList.remove('show');
+            }
+        }
+    </script>
+</body>
+</html>
