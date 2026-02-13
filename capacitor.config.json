@@ -1,0 +1,18 @@
+{
+  "appId": "com.autocare.pro",
+  "appName": "AutoCare Pro",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#2563eb",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP"
+    },
+    "StatusBar": {
+      "style": "light",
+      "backgroundColor": "#2563eb"
+    }
+  }
+}
