@@ -419,4 +419,977 @@
             z-index: 3999;
         }
 
-       
+        .notification-overlay.show { display: block; }
+
+        .workshop-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow);
+        }
+
+        .checkbook-entry {
+            background: var(--light);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .costs-summary {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .cost-card {
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .cost-amount { font-size: 24px; font-weight: 800; margin: 8px 0; }
+
+        .fuel-tracker {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+        }
+
+        .fuel-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .document-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .document-card {
+            background: var(--light);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .trip-item {
+            background: var(--light);
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state-icon { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
+
+        .reminder-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--danger);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            opacity: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .car-card:hover .delete-btn,
+        .car-card:active .delete-btn { opacity: 1; }
+
+        .ptr-indicator {
+            position: fixed;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-lg);
+            transition: top 0.3s;
+            z-index: 99;
+        }
+
+        .ptr-indicator.show { top: 20px; }
+
+        @media (min-width: 768px) {
+            .app-container { max-width: 1200px; padding: 20px; }
+            .garage-grid { grid-template-columns: repeat(2, 1fr); }
+            .bottom-nav, .fab, .fab-menu { display: none !important; }
+            .modal { align-items: center; }
+            .modal-content {
+                border-radius: 20px;
+                max-width: 600px;
+                max-height: 85vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-banner" id="offlineBanner">⚠️ Offline - Daten werden lokal gespeichert</div>
+    <div class="ptr-indicator" id="ptrIndicator">🔄</div>
+
+    <div class="app-container">
+        <header class="app-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="logo">
+                    <div class="logo-icon">🚗</div>
+                    <span>AutoCare</span>
+                </div>
+                <button onclick="toggleNotifications()" style="background: none; border: none; font-size: 24px; position: relative;">
+                    🔔
+                    <span id="notifBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 12px;">!</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Sections -->
+        <section id="garage" class="section active">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="font-size: 22px; font-weight: 700;">Meine Garage</h2>
+                    <button class="btn btn-primary" onclick="openModal('addCarModal')" style="width: auto; padding: 10px 16px; font-size: 14px;">+ Auto</button>
+                </div>
+                <div id="garageGrid" class="garage-grid"></div>
+            </div>
+        </section>
+
+        <section id="workshop" class="section">
+            <div class="card">
+                <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px;">Werkstätten</h2>
+                <div class="workshop-card" onclick="findWorkshops('atu')">
+                    <div style="font-size: 48px; margin-bottom: 10px;">🔵</div>
+                    <div style="font-size: 20px; font-weight: 700;">ATU</div>
+                    <p style="color: #666; font-size: 14px;">Auto-Teile-Unger</p>
+                    <div style="color: var(--secondary); margin-top: 10px;">⭐⭐⭐⭐ (4.2)</div>
+                </div>
+                <div class="workshop-card" onclick="findWorkshops('pitstop')">
+                    <div style="font-size: 48px; margin-bottom: 10px;">🔴</div>
+                    <div style="font-size: 20px; font-weight: 700;">PIT STOP</div>
+                    <p style="color: #666; font-size: 14px;">Reifen & Autoservice</p>
+                    <div style="color: var(--secondary); margin-top: 10px;">⭐⭐⭐⭐⭐ (4.5)</div>
+                </div>
+                <div id="workshopResults"></div>
+            </div>
+        </section>
+
+        <section id="checkbook" class="section">
+            <div class="card">
+                <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px;">Checkheft</h2>
+                <select id="carSelectCheckbook" onchange="loadCheckbook()" style="width: 100%; padding: 14px; border-radius: 12px; border: 2px solid #e5e7eb; margin-bottom: 20px; font-size: 16px;">
+                    <option value="">Fahrzeug wählen...</option>
+                </select>
+                <div id="checkbookContent">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📖</div>
+                        <p>Wähle ein Fahrzeug aus deiner Garage</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="costs" class="section">
+            <div class="card">
+                <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px;">Kosten</h2>
+                <div class="costs-summary">
+                    <div class="cost-card" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+                        <div style="font-size: 12px; opacity: 0.9;">Gesamt</div>
+                        <div class="cost-amount" id="totalCosts">0 €</div>
+                    </div>
+                    <div class="cost-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                        <div style="font-size: 12px; opacity: 0.9;">2024</div>
+                        <div class="cost-amount" id="yearCosts">0 €</div>
+                    </div>
+                    <div class="cost-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <div style="font-size: 12px; opacity: 0.9;">Ø/km</div>
+                        <div class="cost-amount" id="costPerKm">0 €</div>
+                    </div>
+                    <div class="cost-card" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                        <div style="font-size: 12px; opacity: 0.9;">Ø/Monat</div>
+                        <div class="cost-amount" id="costPerMonth">0 €</div>
+                    </div>
+                </div>
+                <div class="fuel-tracker">
+                    <h3 style="margin-bottom: 15px;">⛽ Spritverbrauch</h3>
+                    <div class="fuel-stats">
+                        <div>
+                            <div style="font-size: 20px; font-weight: bold;" id="avgConsumption">--</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Ø l/100km</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 20px; font-weight: bold;" id="lastConsumption">--</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Letzte</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 20px; font-weight: bold;" id="totalFuel">--</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Getankt (L)</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 20px; font-weight: bold;" id="fuelCosts">--</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Kosten (€)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="documents" class="section">
+            <div class="card">
+                <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px;">Dokumente</h2>
+                <div class="document-grid" id="documentGrid"></div>
+                <button class="btn btn-primary" onclick="openModal('uploadDocModal')" style="margin-top: 20px;">📤 Dokument hochladen</button>
+            </div>
+        </section>
+
+        <section id="trips" class="section">
+            <div class="card">
+                <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px;">Fahrtenbuch</h2>
+                <div id="tripList"></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- FAB -->
+    <button class="fab" onclick="toggleFabMenu()">+</button>
+    <div class="fab-menu" id="fabMenu">
+        <button class="fab-item" onclick="openModal('addCarModal'); toggleFabMenu();">🚗 Auto hinzufügen</button>
+        <button class="fab-item" onclick="openFuelModal(); toggleFabMenu();">⛽ Tanken</button>
+        <button class="fab-item" onclick="openTripModal(); toggleFabMenu();">🛣️ Fahrt eintragen</button>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+        <button class="bottom-nav-item active" onclick="showSection('garage')">
+            <span class="bottom-nav-icon">🏠</span>
+            <span>Garage</span>
+        </button>
+        <button class="bottom-nav-item" onclick="showSection('workshop')">
+            <span class="bottom-nav-icon">🔧</span>
+            <span>Werkstatt</span>
+        </button>
+        <button class="bottom-nav-item" onclick="showSection('checkbook')">
+            <span class="bottom-nav-icon">📋</span>
+            <span>Checkheft</span>
+        </button>
+        <button class="bottom-nav-item" onclick="showSection('costs')">
+            <span class="bottom-nav-icon">💰</span>
+            <span>Kosten</span>
+        </button>
+        <button class="bottom-nav-item" onclick="showSection('documents')">
+            <span class="bottom-nav-icon">📄</span>
+            <span>Mehr</span>
+        </button>
+    </nav>
+
+    <!-- Notification Panel -->
+    <div class="notification-overlay" id="notifOverlay" onclick="toggleNotifications()"></div>
+    <div class="notification-panel" id="notificationPanel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3>🔔 Erinnerungen</h3>
+            <button onclick="toggleNotifications()" style="background: none; border: none; font-size: 28px;">×</button>
+        </div>
+        <div id="notificationList"></div>
+    </div>
+
+    <!-- Install Banner -->
+    <div class="install-banner" id="installBanner">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="font-size: 40px;">🚗</div>
+            <div>
+                <div style="font-weight: 700;">AutoCare Pro installieren</div>
+                <div style="font-size: 14px; color: #666;">Schneller Zugriff vom Homescreen</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="dismissInstall()" style="background: none; border: none; color: #666; padding: 10px;">Später</button>
+            <button onclick="installApp()" class="btn btn-primary" style="width: auto; padding: 10px 20px;">Installieren</button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="addCarModal" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Auto hinzufügen</h2>
+                <button onclick="closeModal('addCarModal')" style="background: none; border: none; font-size: 28px;">×</button>
+            </div>
+            <form id="addCarForm" onsubmit="saveCar(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Marke *</label>
+                        <select id="carBrand" required onchange="updateModels()">
+                            <option value="">Wählen...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Modell *</label>
+                        <select id="carModel" required disabled>
+                            <option value="">Marke wählen...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Baujahr *</label>
+                        <select id="carYear" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Kennzeichen *</label>
+                        <input type="text" id="carPlate" placeholder="M-XX 1234" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Kilometerstand *</label>
+                    <input type="number" id="carMileage" placeholder="50000" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nächste TÜV</label>
+                        <input type="date" id="carTuv">
+                    </div>
+                    <div class="form-group">
+                        <label>Motor</label>
+                        <input type="text" id="carEngine" placeholder="z.B. 2.0 TDI">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Speichern</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="uploadDocModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px;">Dokument hochladen</h2>
+            <form onsubmit="saveDocument(event)">
+                <div class="form-group">
+                    <label>Typ</label>
+                    <select id="docType" required>
+                        <option value="zulassung">Fahrzeugschein</option>
+                        <option value="versicherung">Versicherung</option>
+                        <option value="tuev">TÜV-Bericht</option>
+                        <option value="rechnung">Rechnung</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fahrzeug</label>
+                    <select id="docCarId" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Datei</label>
+                    <input type="file" id="docFile" accept=".pdf,.jpg,.png" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Hochladen</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Database
+        const vehicleDatabase = {
+            "Audi": ["A1", "A3", "A4", "A5", "A6", "Q3", "Q5", "TT"],
+            "BMW": ["1er", "3er", "5er", "X1", "X3", "X5"],
+            "Mercedes": ["A-Klasse", "C-Klasse", "E-Klasse", "GLA", "GLC"],
+            "VW": ["Polo", "Golf", "Passat", "Tiguan", "T-Roc", "ID.3", "ID.4"],
+            "Opel": ["Corsa", "Astra", "Insignia", "Mokka"],
+            "Ford": ["Fiesta", "Focus", "Kuga", "Puma", "Mustang"],
+            "Toyota": ["Yaris", "Corolla", "RAV4", "Camry"]
+        };
+
+        const years = Array.from({length: 35}, (_, i) => 2024 - i);
+
+        // Data
+        let cars = JSON.parse(localStorage.getItem('cars')) || [];
+        let serviceEntries = JSON.parse(localStorage.getItem('serviceEntries')) || [];
+        let fuelEntries = JSON.parse(localStorage.getItem('fuelEntries')) || [];
+        let trips = JSON.parse(localStorage.getItem('trips')) || [];
+        let documents = JSON.parse(localStorage.getItem('documents')) || [];
+        let deferredPrompt = null;
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            initBrandSelect();
+            renderGarage();
+            updateCarSelects();
+            checkReminders();
+            setupPullToRefresh();
+            setupOfflineDetection();
+            
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                setTimeout(() => document.getElementById('installBanner').classList.add('show'), 2000);
+            });
+        });
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => console.log('SW skipped'));
+        }
+
+        function initBrandSelect() {
+            const select = document.getElementById('carBrand');
+            Object.keys(vehicleDatabase).forEach(brand => {
+                const opt = document.createElement('option');
+                opt.value = brand;
+                opt.textContent = brand;
+                select.appendChild(opt);
+            });
+            
+            const yearSelect = document.getElementById('carYear');
+            years.forEach(year => {
+                const opt = document.createElement('option');
+                opt.value = year;
+                opt.textContent = year;
+                yearSelect.appendChild(opt);
+            });
+        }
+
+        function updateModels() {
+            const brand = document.getElementById('carBrand').value;
+            const select = document.getElementById('carModel');
+            select.innerHTML = '<option value="">Wählen...</option>';
+            
+            if (vehicleDatabase[brand]) {
+                vehicleDatabase[brand].forEach(model => {
+                    const opt = document.createElement('option');
+                    opt.value = model;
+                    opt.textContent = model;
+                    select.appendChild(opt);
+                });
+                select.disabled = false;
+            }
+        }
+
+        // Navigation
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(id).classList.add('active');
+            const navItems = document.querySelectorAll('.bottom-nav-item');
+            const sections = ['garage', 'workshop', 'checkbook', 'costs', 'documents'];
+            const idx = sections.indexOf(id);
+            if (idx > -1) navItems[idx].classList.add('active');
+            
+            if (id === 'checkbook') loadCheckbook();
+            if (id === 'costs') loadCosts();
+            if (id === 'trips') loadTrips();
+            if (id === 'documents') loadDocuments();
+            
+            document.getElementById('fabMenu').classList.remove('show');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function toggleFabMenu() {
+            document.getElementById('fabMenu').classList.toggle('show');
+        }
+
+        // Car Management
+        function saveCar(e) {
+            e.preventDefault();
+            
+            const car = {
+                id: Date.now(),
+                brand: document.getElementById('carBrand').value,
+                model: document.getElementById('carModel').value,
+                year: parseInt(document.getElementById('carYear').value),
+                plate: document.getElementById('carPlate').value,
+                engine: document.getElementById('carEngine').value,
+                mileage: parseInt(document.getElementById('carMileage').value),
+                tuv: document.getElementById('carTuv').value,
+                added: new Date().toISOString()
+            };
+            
+            cars.push(car);
+            localStorage.setItem('cars', JSON.stringify(cars));
+            
+            if (car.tuv) {
+                serviceEntries.push({
+                    id: Date.now(),
+                    carId: car.id,
+                    date: car.tuv,
+                    mileage: car.mileage,
+                    type: 'tuev',
+                    desc: 'TÜV/HU',
+                    cost: 0
+                });
+                localStorage.setItem('serviceEntries', JSON.stringify(serviceEntries));
+            }
+            
+            renderGarage();
+            updateCarSelects();
+            closeModal('addCarModal');
+            document.getElementById('addCarForm').reset();
+            showToast('Auto gespeichert!');
+            if (navigator.vibrate) navigator.vibrate(50);
+        }
+
+        function deleteCar(id) {
+            if (!confirm('Auto wirklich löschen?')) return;
+            
+            cars = cars.filter(c => c.id !== id);
+            serviceEntries = serviceEntries.filter(e => e.carId !== id);
+            fuelEntries = fuelEntries.filter(f => f.carId !== id);
+            trips = trips.filter(t => t.carId !== id);
+            documents = documents.filter(d => d.carId !== id);
+            
+            localStorage.setItem('cars', JSON.stringify(cars));
+            localStorage.setItem('serviceEntries', JSON.stringify(serviceEntries));
+            localStorage.setItem('fuelEntries', JSON.stringify(fuelEntries));
+            localStorage.setItem('trips', JSON.stringify(trips));
+            localStorage.setItem('documents', JSON.stringify(documents));
+            
+            renderGarage();
+            updateCarSelects();
+            showToast('Auto gelöscht');
+        }
+
+        function renderGarage() {
+            const grid = document.getElementById('garageGrid');
+            
+            if (cars.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🏎️</div>
+                        <h3>Garage ist leer</h3>
+                        <p>Füge dein erstes Auto hinzu</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = cars.map(car => {
+                const entries = serviceEntries.filter(e => e.carId === car.id);
+                const totalCosts = entries.reduce((sum, e) => sum + (e.cost || 0), 0);
+                const daysLeft = car.tuv ? Math.ceil((new Date(car.tuv) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+                const warning = daysLeft !== null && daysLeft < 30;
+                
+                return `
+                    <div class="car-card" onclick="addService(${car.id})">
+                        ${warning ? `<div class="reminder-badge">${daysLeft < 0 ? '‼' : '!'}</div>` : ''}
+                        <button class="delete-btn" onclick="event.stopPropagation(); deleteCar(${car.id})">×</button>
+                        <div class="car-image">
+                            <div class="car-badge">${car.year}</div>
+                            🚗
+                        </div>
+                        <div class="car-name">${car.brand} ${car.model}</div>
+                        <div class="car-details">${car.plate}<br>${car.engine || ''}</div>
+                        <div class="car-stats">
+                            <div class="stat">
+                                <div class="stat-value">${(car.mileage / 1000).toFixed(0)}k</div>
+                                <div class="stat-label">km</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${entries.length}</div>
+                                <div class="stat-label">Service</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${totalCosts.toFixed(0)}</div>
+                                <div class="stat-label">€</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value" style="${warning ? 'color: var(--danger);' : ''}">
+                                    ${daysLeft !== null ? (daysLeft < 0 ? 'ABG' : daysLeft) : '--'}
+                                </div>
+                                <div class="stat-label">TÜV</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateCarSelects() {
+            const opts = cars.map(c => `<option value="${c.id}">${c.brand} ${c.model}</option>`).join('');
+            document.getElementById('carSelectCheckbook').innerHTML = '<option value="">Wählen...</option>' + opts;
+            document.getElementById('docCarId').innerHTML = opts;
+        }
+
+        function addService(carId) {
+            const car = cars.find(c => c.id === carId);
+            const types = ['Inspektion', 'Ölwechsel', 'Reifen', 'TÜV', 'Reparatur'];
+            const type = prompt(`Service für ${car.brand} ${car.model}:\n1. Inspektion\n2. Ölwechsel\n3. Reifen\n4. TÜV\n5. Reparatur\n\nNummer:`);
+            
+            if (!type || type < 1 || type > 5) return;
+            
+            const cost = parseFloat(prompt('Kosten (€):')) || 0;
+            const entry = {
+                id: Date.now(),
+                carId: carId,
+                date: new Date().toISOString().split('T')[0],
+                mileage: car.mileage,
+                type: ['inspektion', 'oelwechsel', 'reifen', 'tuev', 'reparatur'][type - 1],
+                desc: types[type - 1],
+                cost: cost
+            };
+            
+            serviceEntries.push(entry);
+            localStorage.setItem('serviceEntries', JSON.stringify(serviceEntries));
+            showToast('Service eingetragen!');
+            renderGarage();
+        }
+
+        // Checkbook
+        function loadCheckbook() {
+            const carId = document.getElementById('carSelectCheckbook').value;
+            const container = document.getElementById('checkbookContent');
+            
+            if (!carId) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📖</div><p>Wähle ein Fahrzeug</p></div>';
+                return;
+            }
+            
+            const entries = serviceEntries
+                .filter(e => e.carId === parseInt(carId))
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            const emojis = { 'inspektion': '🔧', 'oelwechsel': '🛢️', 'reifen': '🚗', 'tuev': '✓', 'reparatur': '🔩' };
+            
+            container.innerHTML = entries.map(e => `
+                <div class="checkbook-entry">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-weight: 700; color: var(--primary);">
+                            ${emojis[e.type] || '📋'} ${new Date(e.date).toLocaleDateString('de-DE')}
+                        </span>
+                        <span style="background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px;">
+                            ${e.mileage.toLocaleString()} km
+                        </span>
+                    </div>
+                    <div style="color: #666;">${e.desc}</div>
+                    ${e.cost > 0 ? `<div style="font-weight: bold; color: var(--primary); margin-top: 8px;">${e.cost.toFixed(2)} €</div>` : ''}
+                </div>
+            `).join('') || '<p>Keine Einträge</p>';
+        }
+
+        // Costs
+        function loadCosts() {
+            const totalService = serviceEntries.reduce((sum, e) => sum + (e.cost || 0), 0);
+            const totalFuel = fuelEntries.reduce((sum, f) => sum + (f.totalCost || 0), 0);
+            const total = totalService + totalFuel;
+            
+            const thisYear = new Date().getFullYear();
+            const yearTotal = serviceEntries.filter(e => new Date(e.date).getFullYear() === thisYear)
+                .reduce((sum, e) => sum + (e.cost || 0), 0) +
+                fuelEntries.filter(f => new Date(f.date).getFullYear() === thisYear)
+                .reduce((sum, f) => sum + (f.totalCost || 0), 0);
+            
+            let costPerKm = 0, costPerMonth = 0;
+            if (cars.length > 0) {
+                const totalKm = cars.reduce((sum, c) => sum + c.mileage, 0);
+                if (totalKm > 0) costPerKm = total / totalKm;
+                
+                const oldest = cars.sort((a, b) => new Date(a.added) - new Date(b.added))[0];
+                if (oldest) {
+                    const months = Math.max(1, Math.ceil((new Date() - new Date(oldest.added)) / (1000 * 60 * 60 * 24 * 30)));
+                    costPerMonth = total / months;
+                }
+            }
+            
+            document.getElementById('totalCosts').textContent = total.toFixed(0) + ' €';
+            document.getElementById('yearCosts').textContent = yearTotal.toFixed(0) + ' €';
+            document.getElementById('costPerKm').textContent = costPerKm.toFixed(2) + ' €';
+            document.getElementById('costPerMonth').textContent = costPerMonth.toFixed(0) + ' €';
+            
+            if (fuelEntries.length > 0) {
+                const totalLiters = fuelEntries.reduce((sum, f) => sum + f.liters, 0);
+                const avg = fuelEntries.reduce((sum, f) => sum + f.consumption, 0) / fuelEntries.length;
+                const last = fuelEntries[fuelEntries.length - 1];
+                
+                document.getElementById('avgConsumption').textContent = avg.toFixed(1);
+                document.getElementById('lastConsumption').textContent = last.consumption.toFixed(1);
+                document.getElementById('totalFuel').textContent = totalLiters.toFixed(0);
+                document.getElementById('fuelCosts').textContent = totalFuel.toFixed(0);
+            }
+        }
+
+        // Fuel
+        function openFuelModal() {
+            if (cars.length === 0) return showToast('Zuerst Auto hinzufügen!');
+            
+            const carId = cars[0].id;
+            const liters = parseFloat(prompt('Getankte Liter:'));
+            if (!liters) return;
+            
+            const price = parseFloat(prompt('Preis pro Liter (€):')) || 0;
+            const mileage = parseInt(prompt('Kilometerstand:'));
+            if (!mileage) return;
+            
+            let consumption = 0;
+            const prev = fuelEntries.filter(f => f.carId === carId).sort((a, b) => b.mileage - a.mileage)[0];
+            if (prev) consumption = (liters / (mileage - prev.mileage)) * 100;
+            
+            fuelEntries.push({
+                id: Date.now(),
+                carId: carId,
+                date: new Date().toISOString().split('T')[0],
+                mileage: mileage,
+                liters: liters,
+                pricePerLiter: price,
+                totalCost: liters * price,
+                consumption: consumption
+            });
+            
+            localStorage.setItem('fuelEntries', JSON.stringify(fuelEntries));
+            
+            const car = cars.find(c => c.id === carId);
+            if (car && mileage > car.mileage) {
+                car.mileage = mileage;
+                localStorage.setItem('cars', JSON.stringify(cars));
+                renderGarage();
+            }
+            
+            showToast('Tankfüllung gespeichert!');
+            if (document.getElementById('costs').classList.contains('active')) loadCosts();
+        }
+
+        // Trips
+        function openTripModal() {
+            if (cars.length === 0) return showToast('Zuerst Auto hinzufügen!');
+            
+            const type = confirm('Geschäftliche Fahrt?') ? 'business' : 'private';
+            const km = parseInt(prompt('Gefahrene Kilometer:'));
+            if (!km) return;
+            
+            trips.push({
+                id: Date.now(),
+                carId: cars[0].id,
+                date: new Date().toISOString().split('T')[0],
+                type: type,
+                distance: km
+            });
+            
+            localStorage.setItem('trips', JSON.stringify(trips));
+            showToast('Fahrt gespeichert!');
+            if (document.getElementById('trips').classList.contains('active')) loadTrips();
+        }
+
+        function loadTrips() {
+            const sorted = trips.sort((a, b) => new Date(b.date) - new Date(a.date));
+            document.getElementById('tripList').innerHTML = sorted.map(t => `
+                <div class="trip-item">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600;">${new Date(t.date).toLocaleDateString('de-DE')}</div>
+                            <div style="color: #666; font-size: 14px;">${t.distance} km</div>
+                        </div>
+                        <span style="padding: 6px 12px; background: ${t.type === 'business' ? '#dbeafe' : '#fce7f3'}; color: ${t.type === 'business' ? '#1d4ed8' : '#be185d'}; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                            ${t.type === 'business' ? 'Geschäftlich' : 'Privat'}
+                        </span>
+                    </div>
+                </div>
+            `).join('') || '<p>Keine Fahrten</p>';
+        }
+
+        // Documents
+        function loadDocuments() {
+            const icons = { 'zulassung': '📋', 'versicherung': '🛡️', 'tuev': '✓', 'rechnung': '💶' };
+            document.getElementById('documentGrid').innerHTML = documents.map(doc => {
+                const car = cars.find(c => c.id === doc.carId);
+                const expiring = doc.expiry && new Date(doc.expiry) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                return `
+                    <div class="document-card" style="${expiring ? 'border: 2px solid var(--danger);' : ''}">
+                        <div style="font-size: 32px; margin-bottom: 8px;">${icons[doc.type] || '📄'}</div>
+                        <div style="font-weight: 600; font-size: 13px; text-transform: uppercase;">${doc.type}</div>
+                        <div style="font-size: 12px; color: #666; margin-top: 4px;">${car?.brand || ''}</div>
+                    </div>
+                `;
+            }).join('') || '<p style="grid-column: 1/-1; text-align: center; color: #666;">Keine Dokumente</p>';
+        }
+
+        function saveDocument(e) {
+            e.preventDefault();
+            documents.push({
+                id: Date.now(),
+                carId: parseInt(document.getElementById('docCarId').value),
+                type: document.getElementById('docType').value,
+                filename: document.getElementById('docFile').files[0]?.name || 'Dokument'
+            });
+            localStorage.setItem('documents', JSON.stringify(documents));
+            closeModal('uploadDocModal');
+            loadDocuments();
+            showToast('Dokument gespeichert!');
+        }
+
+        // Workshop
+        function findWorkshops(type) {
+            const results = document.getElementById('workshopResults');
+            const workshops = type === 'atu' ? [
+                { name: 'ATU München', addr: 'Meindlstraße 12', dist: '2.3 km', phone: '089 123456' },
+                { name: 'ATU Pasing', addr: 'Landsberger Str. 456', dist: '5.1 km', phone: '089 654321' }
+            ] : [
+                { name: 'PIT STOP West', addr: 'Ridlerstraße 45', dist: '3.2 km', phone: '089 555566' },
+                { name: 'PIT STOP Ost', addr: 'Einsteinstr. 88', dist: '6.5 km', phone: '089 777788' }
+            ];
+            
+            results.innerHTML = workshops.map(w => `
+                <div style="background: white; padding: 20px; border-radius: 16px; margin-top: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <div style="font-weight: 700; font-size: 16px;">${w.name}</div>
+                            <div style="color: #666; font-size: 14px; margin-top: 4px;">${w.addr}</div>
+                            <div style="color: #666; font-size: 14px;">📞 ${w.phone}</div>
+                        </div>
+                        <span style="background: #dbeafe; color: #1d4ed8; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;">${w.dist}</span>
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 15px;" onclick="showToast('Termin angefragt!')">Termin buchen</button>
+                </div>
+            `).join('');
+        }
+
+        // Notifications
+        function checkReminders() {
+            const notifs = [];
+            cars.forEach(car => {
+                if (car.tuv) {
+                    const days = Math.ceil((new Date(car.tuv) - new Date()) / (1000 * 60 * 60 * 24));
+                    if (days < 30 && days > -1) notifs.push({ type: 'warning', text: `TÜV ${car.brand} ${car.model} in ${days} Tagen` });
+                    else if (days < 0) notifs.push({ type: 'danger', text: `TÜV ${car.brand} ${car.model} ABGELAUFEN!` });
+                }
+            });
+            
+            const badge = document.getElementById('notifBadge');
+            if (notifs.length > 0) {
+                badge.style.display = 'flex';
+                document.getElementById('notificationList').innerHTML = notifs.map(n => `
+                    <div style="padding: 16px; border-radius: 12px; background: ${n.type === 'danger' ? '#fef2f2' : '#f3f4f6'}; margin-bottom: 12px; border-left: 4px solid ${n.type === 'danger' ? 'var(--danger)' : 'var(--primary)'};">
+                        ${n.text}
+                    </div>
+                `).join('');
+            } else {
+                badge.style.display = 'none';
+                document.getElementById('notificationList').innerHTML = '<p style="color: #666;">Keine Erinnerungen</p>';
+            }
+        }
+
+        function toggleNotifications() {
+            document.getElementById('notificationPanel').classList.toggle('show');
+            document.getElementById('notifOverlay').classList.toggle('show');
+        }
+
+        // Install
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => {
+                    document.getElementById('installBanner').classList.remove('show');
+                    deferredPrompt = null;
+                });
+            }
+        }
+
+        function dismissInstall() {
+            document.getElementById('installBanner').classList.remove('show');
+        }
+
+        // Pull to Refresh
+        function setupPullToRefresh() {
+            let startY = 0;
+            const ptr = document.getElementById('ptrIndicator');
+            
+            document.addEventListener('touchstart', e => {
+                if (window.scrollY === 0) startY = e.touches[0].pageY;
+            });
+            
+            document.addEventListener('touchmove', e => {
+                if (startY > 0 && window.scrollY === 0) {
+                    if (e.touches[0].pageY - startY > 100) ptr.classList.add('show');
+                }
+            });
+            
+            document.addEventListener('touchend', () => {
+                if (ptr.classList.contains('show')) {
+                    setTimeout(() => {
+                        ptr.classList.remove('show');
+                        location.reload();
+                    }, 500);
+                }
+                startY = 0;
+            });
+        }
+
+        // Offline
+        function setupOfflineDetection() {
+            const banner = document.getElementById('offlineBanner');
+            window.addEventListener('online', () => banner.classList.remove('show'));
+            window.addEventListener('offline', () => banner.classList.add('show'));
+            if (!navigator.onLine) banner.classList.add('show');
+        }
+
+        // Toast
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // Close modals
+        window.onclick = e => {
+            if (e.target.classList.contains('modal')) closeModal(e.target.id);
+        };
+    </script>
+</body>
+</html>
