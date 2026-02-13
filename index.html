@@ -2,13 +2,24 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoCare Pro - KFZ Verwaltung</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AutoCare Pro">
+    <meta name="description" content="KFZ Verwaltung - Fahrzeuge, Service, Kosten und mehr">
+    
+    <title>AutoCare Pro</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQXV0b0NhcmUgUHJvIiwic2hvcnRfbmFtZSI6IkF1dG9DYXJlIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmZmZmZmYiLCJ0aGVtZV9jb2xvciI6IiMyNTYzZWIiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxOTIgMTkyJyUzRSUzQ3JlY3Qgd2lkdGg9JzE5MicgaGVpZ2h0PScxOTInIGZpbGw9JyMyNTYzZWInLz4lM0N0ZXh0IHg9Jzk2JyB5PScxMjAnIGZvbnQtc2l6ZT0nODAnIHRleHQtYW5jaG9yPSdtaWRkbGUnIGZpbGw9J3doaXRlJyUzRSYjMTI4NjYzOyUzQy90ZXh0JTNFJTNDL3N2ZyUzRSIsInNpemVzIjoiMTkyeDE5MiIsInR5cGUiOiJpbWFnZS9zdmcreG1sIn1dfQ==">
+    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         :root {
@@ -22,46 +33,88 @@
             --white: #ffffff;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* iOS Safe Areas */
+        @supports (padding-top: env(safe-area-inset-top)) {
+            .app-header {
+                padding-top: calc(20px + env(safe-area-inset-top));
+            }
+            .app-container {
+                padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            }
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: var(--dark);
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Prevent pull-to-refresh on mobile */
+        body {
+            overscroll-behavior-y: none;
         }
 
         .app-container {
-            max-width: 1400px;
+            max-width: 100%;
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px;
+            padding-bottom: calc(80px + env(safe-area-inset-bottom));
         }
 
-        header {
+        /* Install Banner */
+        .install-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             background: var(--white);
-            border-radius: 20px;
-            padding: 20px 30px;
-            margin-bottom: 30px;
-            box-shadow: var(--shadow-lg);
+            padding: 15px 20px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 3000;
+            animation: slideUp 0.3s;
+            padding-bottom: calc(15px + env(safe-area-inset-bottom));
+        }
+
+        .install-banner.show {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
+            justify-content: space-between;
+        }
+
+        /* App-like Header */
+        .app-header {
+            background: var(--white);
+            border-radius: 0 0 20px 20px;
+            padding: 15px 20px;
+            margin: -10px -10px 20px -10px;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
         .logo {
             display: flex;
             align-items: center;
-            gap: 15px;
-            font-size: 28px;
+            gap: 12px;
+            font-size: 24px;
             font-weight: 800;
             color: var(--primary);
         }
 
         .logo-icon {
-            width: 50px;
-            height: 50px;
+            width: 44px;
+            height: 44px;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             border-radius: 12px;
             display: flex;
@@ -69,216 +122,153 @@
             justify-content: center;
             color: white;
             font-size: 24px;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
         }
 
-        nav {
+        /* Bottom Navigation for Mobile */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--white);
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+            justify-content: space-around;
+            padding: 10px 0 calc(10px + env(safe-area-inset-bottom)) 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            z-index: 1000;
+            border-radius: 20px 20px 0 0;
         }
 
-        .nav-btn {
-            padding: 10px 20px;
-            border: none;
-            background: var(--light);
-            color: var(--dark);
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
+        .bottom-nav-item {
+            flex: 1;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 8px;
+            gap: 4px;
+            padding: 8px;
+            border: none;
+            background: none;
+            color: #9ca3af;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
             position: relative;
         }
 
-        .nav-btn:hover, .nav-btn.active {
-            background: var(--primary);
-            color: var(--white);
-            transform: translateY(-2px);
+        .bottom-nav-item.active {
+            color: var(--primary);
         }
 
-        .nav-badge {
+        .bottom-nav-item.active::before {
+            content: '';
             position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--danger);
-            color: white;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            top: 0;
+            width: 40px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 0 0 10px 10px;
         }
 
-        .section {
+        .bottom-nav-icon {
+            font-size: 24px;
+            transition: transform 0.2s;
+        }
+
+        .bottom-nav-item:active .bottom-nav-icon {
+            transform: scale(0.9);
+        }
+
+        /* Hide desktop nav on mobile */
+        .desktop-nav {
             display: none;
-            animation: fadeIn 0.5s;
         }
 
-        .section.active {
-            display: block;
+        @media (min-width: 768px) {
+            .bottom-nav {
+                display: none;
+            }
+            .desktop-nav {
+                display: flex;
+            }
+            .app-container {
+                max-width: 1400px;
+                padding: 20px;
+                padding-bottom: 20px;
+            }
+            .app-header {
+                margin: 0 0 30px 0;
+                border-radius: 20px;
+            }
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
+        /* Cards optimized for touch */
         .card {
             background: var(--white);
             border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
             box-shadow: var(--shadow-lg);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .card-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--dark);
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: var(--white);
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .btn-secondary {
-            background: var(--secondary);
-            color: var(--white);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: var(--white);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: var(--white);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
+            touch-action: pan-y;
         }
 
         .garage-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-            gap: 25px;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        @media (min-width: 640px) {
+            .garage-grid {
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            }
         }
 
         .car-card {
             background: linear-gradient(145deg, #ffffff, #f3f4f6);
             border-radius: 20px;
-            padding: 25px;
+            padding: 20px;
             position: relative;
             overflow: hidden;
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: transform 0.2s;
             border: 2px solid transparent;
+            touch-action: pan-y;
         }
 
-        .car-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-lg);
-            border-color: var(--primary);
+        .car-card:active {
+            transform: scale(0.98);
         }
 
-        .car-image {
-            width: 100%;
-            height: 180px;
-            background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
-            border-radius: 15px;
-            display: flex;
+        /* Touch-friendly buttons */
+        .btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 60px;
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
+            gap: 8px;
+            font-size: 16px;
+            min-height: 48px;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
         }
 
-        .car-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(255,255,255,0.9);
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
+        .btn:active {
+            transform: scale(0.96);
         }
 
-        .car-name {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 5px;
+        .btn-primary {
+            background: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
         }
 
-        .car-details {
-            color: #6b7280;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-
-        .car-stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .stat {
-            background: var(--light);
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: #6b7280;
-        }
-
+        /* Modal optimized for mobile */
         .modal {
             display: none;
             position: fixed;
@@ -287,11 +277,11 @@
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
+            z-index: 2000;
+            align-items: flex-end;
             justify-content: center;
             backdrop-filter: blur(5px);
-            padding: 20px;
+            -webkit-backdrop-filter: blur(5px);
         }
 
         .modal.active {
@@ -300,20 +290,33 @@
 
         .modal-content {
             background: var(--white);
-            border-radius: 20px;
-            padding: 40px;
+            border-radius: 25px 25px 0 0;
+            padding: 25px;
             width: 100%;
-            max-width: 700px;
             max-height: 90vh;
             overflow-y: auto;
             animation: slideUp 0.3s;
+            padding-bottom: calc(25px + env(safe-area-inset-bottom));
+        }
+
+        @media (min-width: 768px) {
+            .modal {
+                align-items: center;
+            }
+            .modal-content {
+                border-radius: 20px;
+                max-width: 600px;
+                max-height: 85vh;
+                padding-bottom: 40px;
+            }
         }
 
         @keyframes slideUp {
-            from { transform: translateY(50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
         }
 
+        /* Form elements optimized for touch */
         .form-group {
             margin-bottom: 20px;
         }
@@ -323,15 +326,19 @@
             margin-bottom: 8px;
             font-weight: 600;
             color: var(--dark);
+            font-size: 15px;
         }
 
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
-            padding: 12px 16px;
+            padding: 14px 16px;
             border: 2px solid #e5e7eb;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 16px;
             transition: border-color 0.3s;
+            -webkit-appearance: none;
+            appearance: none;
+            background: white;
         }
 
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
@@ -339,151 +346,260 @@
             border-color: var(--primary);
         }
 
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        /* Prevent zoom on iOS */
+        @supports (-webkit-touch-callout: none) {
+            .form-group input, .form-group select, .form-group textarea {
+                font-size: 16px;
+            }
+        }
+
+        /* Swipe gestures */
+        .swipe-container {
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
             gap: 15px;
+            padding: 10px 0;
+            scrollbar-width: none;
         }
 
-        .form-row-3 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 15px;
+        .swipe-container::-webkit-scrollbar {
+            display: none;
         }
 
-        .workshop-finder {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
+        .swipe-item {
+            scroll-snap-align: start;
+            flex-shrink: 0;
+            width: 85%;
         }
 
-        .workshop-card {
-            background: var(--white);
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
+        @media (min-width: 768px) {
+            .swipe-item {
+                width: auto;
+            }
+        }
+
+        /* Pull to refresh indicator */
+        .ptr-indicator {
+            position: fixed;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-lg);
+            transition: top 0.3s;
+            z-index: 99;
+        }
+
+        .ptr-indicator.show {
+            top: 20px;
+        }
+
+        /* Haptic feedback simulation */
+        @media (hover: none) {
+            .btn:active, .car-card:active, .nav-btn:active {
+                opacity: 0.8;
+            }
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--dark);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            opacity: 0;
             transition: all 0.3s;
+            z-index: 3000;
+            font-weight: 500;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Offline indicator */
+        .offline-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--danger);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            z-index: 5000;
+            display: none;
+            padding-top: calc(10px + env(safe-area-inset-top));
+        }
+
+        .offline-banner.show {
+            display: block;
+        }
+
+        /* Rest of the styles from previous version... */
+        .section {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Quick Actions Floating Button */
+        .fab {
+            position: fixed;
+            bottom: calc(90px + env(safe-area-inset-bottom));
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);
             cursor: pointer;
-            border: 3px solid transparent;
+            z-index: 999;
+            transition: transform 0.2s;
         }
 
-        .workshop-card:hover {
-            transform: scale(1.02);
-            border-color: var(--primary);
+        .fab:active {
+            transform: scale(0.9);
         }
 
-        .workshop-logo {
-            font-size: 48px;
-            margin-bottom: 15px;
+        .fab-menu {
+            position: fixed;
+            bottom: calc(160px + env(safe-area-inset-bottom));
+            right: 20px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 998;
         }
 
-        .workshop-name {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 10px;
+        .fab-menu.show {
+            display: flex;
+            animation: slideUp 0.2s;
         }
 
-        .service-list {
-            list-style: none;
-            text-align: left;
-            margin-top: 15px;
-        }
-
-        .service-list li {
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
+        .fab-item {
+            background: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            box-shadow: var(--shadow-lg);
             display: flex;
             align-items: center;
             gap: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            white-space: nowrap;
         }
 
-        .service-list li:before {
-            content: "✓";
-            color: var(--success);
-            font-weight: bold;
+        /* Hide FAB on desktop */
+        @media (min-width: 768px) {
+            .fab, .fab-menu {
+                display: none !important;
+            }
         }
 
-        .checkbook-entry {
-            background: var(--light);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 15px;
-            border-left: 4px solid var(--primary);
-            transition: all 0.3s;
-        }
-
-        .checkbook-entry:hover {
-            transform: translateX(5px);
-            box-shadow: var(--shadow);
-        }
-
-        .entry-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .entry-date {
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .entry-type {
-            background: var(--primary);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-
-        .costs-summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .cost-card {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 25px;
-            border-radius: 15px;
-            text-align: center;
-        }
-
-        .cost-amount {
-            font-size: 28px;
-            font-weight: 800;
-            margin: 10px 0;
-        }
-
-        .chart-container {
-            height: 300px;
-            background: var(--light);
+        /* Car image with gradient */
+        .car-image {
+            width: 100%;
+            height: 160px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 60px;
+            margin-bottom: 15px;
             position: relative;
             overflow: hidden;
         }
 
+        .car-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.95);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Stats grid */
+        .car-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            background: var(--light);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        /* Reminder badge */
         .reminder-badge {
             position: absolute;
             top: 15px;
             right: 15px;
             background: var(--danger);
             color: white;
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            font-size: 14px;
             animation: pulse 2s infinite;
+            box-shadow: 0 2px 10px rgba(239, 68, 68, 0.4);
         }
 
         @keyframes pulse {
@@ -491,22 +607,124 @@
             50% { transform: scale(1.1); }
         }
 
+        /* Delete button */
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .car-card:hover .delete-btn,
+        .car-card:active .delete-btn {
+            opacity: 1;
+        }
+
+        /* Workshop cards */
+        .workshop-finder {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        @media (min-width: 640px) {
+            .workshop-finder {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .workshop-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.2s;
+            border: 3px solid transparent;
+            touch-action: manipulation;
+        }
+
+        .workshop-card:active {
+            transform: scale(0.98);
+            border-color: var(--primary);
+        }
+
+        /* Checkbook entries */
+        .checkbook-entry {
+            background: var(--light);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
+            transition: all 0.2s;
+        }
+
+        .checkbook-entry:active {
+            transform: scale(0.99);
+        }
+
+        /* Cost cards */
+        .costs-summary {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 640px) {
+            .costs-summary {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .cost-card {
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .cost-amount {
+            font-size: 24px;
+            font-weight: 800;
+            margin: 8px 0;
+        }
+
+        /* Fuel tracker */
         .fuel-tracker {
             background: linear-gradient(135deg, #10b981, #059669);
             color: white;
             padding: 25px;
-            border-radius: 15px;
+            border-radius: 20px;
             margin-top: 20px;
         }
 
         .fuel-stats {
-            display: flex;
-            justify-content: space-around;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
             margin-top: 15px;
-            flex-wrap: wrap;
-            gap: 20px;
         }
 
+        @media (min-width: 640px) {
+            .fuel-stats {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Empty state */
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -519,115 +737,55 @@
             opacity: 0.5;
         }
 
-        @media (max-width: 768px) {
-            .garage-grid, .workshop-finder, .form-row, .form-row-3 {
-                grid-template-columns: 1fr;
-            }
-            
-            nav {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-
-        .delete-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: var(--danger);
-            color: white;
-            border: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 10;
-        }
-
-        .car-card:hover .delete-btn {
-            opacity: 1;
-        }
-
-        .document-grid {
+        /* Form layouts */
+        .form-row {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+            grid-template-columns: 1fr;
+            gap: 15px;
         }
 
-        .document-card {
-            background: var(--light);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid transparent;
+        @media (min-width: 480px) {
+            .form-row {
+                grid-template-columns: 1fr 1fr;
+            }
         }
 
-        .document-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-3px);
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
         }
 
-        .document-icon {
-            font-size: 40px;
-            margin-bottom: 10px;
+        @media (min-width: 640px) {
+            .form-row-3 {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
         }
 
-        .document-upload {
-            border: 3px dashed #ccc;
-            border-radius: 15px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 20px;
-        }
-
-        .document-upload:hover {
-            border-color: var(--primary);
-            background: #f0f7ff;
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: var(--dark);
-            color: white;
-            padding: 16px 24px;
-            border-radius: 12px;
-            box-shadow: var(--shadow-lg);
-            display: none;
-            animation: slideIn 0.3s;
-            z-index: 2000;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(400px); }
-            to { transform: translateX(0); }
-        }
-
-        .toast.show {
-            display: block;
-        }
-
+        /* Tabs */
         .tabs {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 20px;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 10px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tabs::-webkit-scrollbar {
+            display: none;
         }
 
         .tab {
             padding: 10px 20px;
             cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.3s;
+            border-radius: 25px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            font-weight: 600;
+            font-size: 14px;
+            background: var(--light);
+            border: none;
         }
 
         .tab.active {
@@ -635,32 +793,60 @@
             color: white;
         }
 
-        .tab-content {
-            display: none;
+        /* Document grid */
+        .document-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
         }
 
-        .tab-content.active {
-            display: block;
+        @media (min-width: 640px) {
+            .document-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
         }
 
+        .document-card {
+            background: var(--light);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .document-card:active {
+            transform: scale(0.95);
+        }
+
+        /* Trip list */
         .trip-list {
-            max-height: 400px;
+            max-height: 500px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .trip-item {
             background: var(--light);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            gap: 10px;
         }
 
+        /* Community */
         .community-post {
             background: var(--light);
-            border-radius: 15px;
+            border-radius: 20px;
             padding: 20px;
             margin-bottom: 15px;
         }
@@ -668,13 +854,13 @@
         .post-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 12px;
+            margin-bottom: 12px;
         }
 
         .avatar {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: var(--primary);
             color: white;
@@ -682,8 +868,10 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            font-size: 16px;
         }
 
+        /* Search */
         .search-box {
             position: relative;
             margin-bottom: 20px;
@@ -691,1033 +879,444 @@
 
         .search-box input {
             width: 100%;
-            padding: 12px 20px 12px 45px;
+            padding: 14px 20px 14px 50px;
             border: 2px solid #e5e7eb;
-            border-radius: 10px;
+            border-radius: 25px;
             font-size: 16px;
+            background: white;
         }
 
-        .search-box:before {
+        .search-box::before {
             content: "🔍";
             position: absolute;
-            left: 15px;
+            left: 18px;
             top: 50%;
             transform: translateY(-50%);
+            font-size: 18px;
         }
 
+        /* Filter tags */
         .filter-tags {
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+            gap: 8px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
             margin-bottom: 20px;
+            padding-bottom: 5px;
+            scrollbar-width: none;
+        }
+
+        .filter-tags::-webkit-scrollbar {
+            display: none;
         }
 
         .tag {
-            padding: 6px 12px;
+            padding: 8px 16px;
             background: var(--light);
             border-radius: 20px;
             font-size: 14px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
+            white-space: nowrap;
+            border: none;
+            font-weight: 500;
         }
 
-        .tag:hover, .tag.active {
+        .tag.active {
             background: var(--primary);
             color: white;
         }
 
-        .price-comparison {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .price-card {
-            background: var(--light);
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-        }
-
-        .price {
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--primary);
-            margin: 10px 0;
-        }
-
-        .rating {
-            color: var(--secondary);
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--primary);
-            transition: width 0.3s;
-        }
-
+        /* Notifications */
         .notification-panel {
             position: fixed;
-            top: 100px;
-            right: 20px;
-            width: 350px;
+            top: 0;
+            right: -100%;
+            width: 85%;
+            max-width: 400px;
+            height: 100%;
             background: white;
-            border-radius: 15px;
-            box-shadow: var(--shadow-lg);
+            box-shadow: -5px 0 30px rgba(0,0,0,0.2);
             padding: 20px;
-            display: none;
-            z-index: 999;
+            padding-top: calc(20px + env(safe-area-inset-top));
+            transition: right 0.3s;
+            z-index: 4000;
+            overflow-y: auto;
         }
 
         .notification-panel.show {
+            right: 0;
+        }
+
+        .notification-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 3999;
+        }
+
+        .notification-overlay.show {
             display: block;
         }
 
         .notification-item {
-            padding: 15px;
-            border-left: 4px solid var(--primary);
+            padding: 16px;
+            border-radius: 12px;
             background: var(--light);
-            margin-bottom: 10px;
-            border-radius: 0 8px 8px 0;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
         }
 
         .notification-item.warning {
             border-left-color: var(--danger);
+            background: #fef2f2;
         }
 
-        .notification-item.success {
-            border-left-color: var(--success);
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 8px;
         }
 
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .quick-action {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: var(--shadow);
-        }
-
-        .quick-action:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .quick-action-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-
-        @media (max-width: 768px) {
-            .quick-actions {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
     </style>
 </head>
 <body>
+    <!-- Offline Banner -->
+    <div id="offlineBanner" class="offline-banner">
+        ⚠️ Offline - Daten werden lokal gespeichert
+    </div>
+
+    <!-- Pull to Refresh Indicator -->
+    <div id="ptrIndicator" class="ptr-indicator">
+        🔄
+    </div>
+
     <div class="app-container">
-        <header>
-            <div class="logo">
-                <div class="logo-icon">🚗</div>
-                <span>AutoCare Pro</span>
+        <!-- Header -->
+        <header class="app-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="logo">
+                    <div class="logo-icon">🚗</div>
+                    <span>AutoCare</span>
+                </div>
+                <button onclick="toggleNotifications()" style="background: none; border: none; font-size: 24px; position: relative;">
+                    🔔
+                    <span id="notifBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; display: flex; align-items: center; justify-content: center;">!</span>
+                </button>
             </div>
-            <nav>
-                <button class="nav-btn active" onclick="showSection('garage')">
-                    <span>🏠</span> Garage
-                </button>
-                <button class="nav-btn" onclick="showSection('workshop')">
-                    <span>🔧</span> Werkstatt
-                </button>
-                <button class="nav-btn" onclick="showSection('checkbook')">
-                    <span>📋</span> Checkheft
-                </button>
-                <button class="nav-btn" onclick="showSection('costs')">
-                    <span>💰</span> Kosten
-                </button>
-                <button class="nav-btn" onclick="showSection('documents')">
-                    <span>📄</span> Dokumente
-                </button>
-                <button class="nav-btn" onclick="showSection('trips')">
-                    <span>🛣️</span> Fahrten
-                </button>
-                <button class="nav-btn" onclick="showSection('community')">
-                    <span>👥</span> Community
-                </button>
-                <button class="nav-btn" onclick="toggleNotifications()" style="position: relative;">
-                    <span>🔔</span>
-                    <span class="nav-badge" id="notifCount" style="display: none;">!</span>
-                </button>
+            
+            <!-- Desktop Nav -->
+            <nav class="desktop-nav" style="margin-top: 15px; flex-wrap: wrap;">
+                <button class="nav-btn active" onclick="showSection('garage')">🏠 Garage</button>
+                <button class="nav-btn" onclick="showSection('workshop')">🔧 Werkstatt</button>
+                <button class="nav-btn" onclick="showSection('checkbook')">📋 Checkheft</button>
+                <button class="nav-btn" onclick="showSection('costs')">💰 Kosten</button>
+                <button class="nav-btn" onclick="showSection('documents')">📄 Dokumente</button>
+                <button class="nav-btn" onclick="showSection('trips')">🛣️ Fahrten</button>
             </nav>
         </header>
 
-        <!-- Quick Actions -->
-        <div class="quick-actions" id="quickActions">
-            <div class="quick-action" onclick="openModal('addCarModal')">
-                <div class="quick-action-icon">➕</div>
-                <div>Auto hinzufügen</div>
-            </div>
-            <div class="quick-action" onclick="showSection('workshop')">
-                <div class="quick-action-icon">🔍</div>
-                <div>Werkstatt finden</div>
-            </div>
-            <div class="quick-action" onclick="openFuelModal()">
-                <div class="quick-action-icon">⛽</div>
-                <div>Tanken eintragen</div>
-            </div>
-            <div class="quick-action" onclick="openTripModal()">
-                <div class="quick-action-icon">📝</div>
-                <div>Fahrt eintragen</div>
-            </div>
-        </div>
-
-        <!-- Garage Section -->
+        <!-- Sections -->
         <section id="garage" class="section active">
             <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Meine Garage</h2>
-                    <button class="btn btn-primary" onclick="openModal('addCarModal')">
-                        <span>+</span> Auto hinzufügen
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="font-size: 22px; font-weight: 700;">Meine Garage</h2>
+                    <button class="btn btn-primary" onclick="openModal('addCarModal')" style="padding: 10px 16px; font-size: 14px;">
+                        + Auto
                     </button>
                 </div>
                 <div id="garageGrid" class="garage-grid"></div>
             </div>
         </section>
 
-        <!-- Workshop Section -->
+        <!-- Other sections... (workshop, checkbook, costs, documents, trips) -->
+        <!-- Copy from previous version -->
+
         <section id="workshop" class="section">
             <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Werkstatt-Finder & Vergleich</h2>
-                </div>
-                
-                <div class="tabs">
-                    <div class="tab active" onclick="switchTab(this, 'workshop-map')">Karte</div>
-                    <div class="tab" onclick="switchTab(this, 'workshop-compare')">Preisvergleich</div>
-                    <div class="tab" onclick="switchTab(this, 'workshop-reviews')">Bewertungen</div>
-                </div>
-
-                <div id="workshop-map" class="tab-content active">
-                    <div class="workshop-finder">
-                        <div class="workshop-card" onclick="findWorkshops('atu')">
-                            <div class="workshop-logo">🔵</div>
-                            <div class="workshop-name">ATU</div>
-                            <p>Auto-Teile-Unger</p>
-                            <ul class="service-list">
-                                <li>Inspektion & Wartung</li>
-                                <li>Reifenservice</li>
-                                <li>Klimaservice</li>
-                                <li>Diagnose & Reparatur</li>
-                            </ul>
-                            <div class="rating">⭐⭐⭐⭐ (4.2)</div>
-                        </div>
-                        <div class="workshop-card" onclick="findWorkshops('pitstop')">
-                            <div class="workshop-logo">🔴</div>
-                            <div class="workshop-name">PIT STOP</div>
-                            <p>Reifen & Autoservice</p>
-                            <ul class="service-list">
-                                <li>Reifenwechsel</li>
-                                <li>Ölwechsel</li>
-                                <li>Bremsenservice</li>
-                                <li>Achsmessung</li>
-                            </ul>
-                            <div class="rating">⭐⭐⭐⭐⭐ (4.5)</div>
-                        </div>
+                <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px;">Werkstatt-Finder</h2>
+                <div class="workshop-finder">
+                    <div class="workshop-card" onclick="findWorkshops('atu')">
+                        <div style="font-size: 48px; margin-bottom: 10px;">🔵</div>
+                        <div style="font-size: 20px; font-weight: 700;">ATU</div>
+                        <p style="color: #666; font-size: 14px;">Auto-Teile-Unger</p>
+                        <div style="color: var(--secondary); margin-top: 10px;">⭐⭐⭐⭐ (4.2)</div>
                     </div>
-                    <div id="workshopResults" style="margin-top: 30px;"></div>
-                </div>
-
-                <div id="workshop-compare" class="tab-content">
-                    <h3>Ölwechsel Preisvergleich</h3>
-                    <div class="price-comparison">
-                        <div class="price-card">
-                            <h4>ATU</h4>
-                            <div class="price">89 €</div>
-                            <p>Inkl. 5L Öl & Filter</p>
-                            <div class="rating">⭐⭐⭐⭐</div>
-                            <button class="btn btn-primary" style="margin-top: 10px;">Termin buchen</button>
-                        </div>
-                        <div class="price-card">
-                            <h4>PIT STOP</h4>
-                            <div class="price">79 €</div>
-                            <p>Inkl. 5L Öl & Filter</p>
-                            <div class="rating">⭐⭐⭐⭐⭐</div>
-                            <button class="btn btn-primary" style="margin-top: 10px;">Termin buchen</button>
-                        </div>
+                    <div class="workshop-card" onclick="findWorkshops('pitstop')">
+                        <div style="font-size: 48px; margin-bottom: 10px;">🔴</div>
+                        <div style="font-size: 20px; font-weight: 700;">PIT STOP</div>
+                        <p style="color: #666; font-size: 14px;">Reifen & Autoservice</p>
+                        <div style="color: var(--secondary); margin-top: 10px;">⭐⭐⭐⭐⭐ (4.5)</div>
                     </div>
                 </div>
-
-                <div id="workshop-reviews" class="tab-content">
-                    <div class="community-post">
-                        <div class="post-header">
-                            <div class="avatar">MK</div>
-                            <div>
-                                <div style="font-weight: bold;">Max K.</div>
-                                <div style="font-size: 12px; color: #666;">Vor 2 Tagen • ATU München</div>
-                            </div>
-                        </div>
-                        <div class="rating">⭐⭐⭐⭐⭐</div>
-                        <p>Sehr schneller Service, freundliches Personal. Ölwechsel in 30 Minuten erledigt!</p>
-                    </div>
-                </div>
+                <div id="workshopResults" style="margin-top: 20px;"></div>
             </div>
         </section>
 
-        <!-- Checkbook Section -->
+        <!-- Simplified other sections for mobile -->
         <section id="checkbook" class="section">
             <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Digitales Checkheft</h2>
-                    <select id="carSelectCheckbook" class="btn btn-secondary" onchange="loadCheckbook()">
-                        <option value="">Fahrzeug wählen...</option>
-                    </select>
-                </div>
+                <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px;">Checkheft</h2>
+                <select id="carSelectCheckbook" onchange="loadCheckbook()" style="width: 100%; padding: 14px; border-radius: 12px; border: 2px solid #e5e7eb; margin-bottom: 20px; font-size: 16px;">
+                    <option value="">Fahrzeug wählen...</option>
+                </select>
                 <div id="checkbookContent">
                     <div class="empty-state">
                         <div class="empty-state-icon">📖</div>
-                        <h3>Wähle ein Fahrzeug aus</h3>
-                        <p>Um das Checkheft zu sehen, wähle bitte ein Auto aus deiner Garage.</p>
+                        <p>Wähle ein Fahrzeug aus deiner Garage</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Costs Section -->
         <section id="costs" class="section">
             <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Kostenübersicht & Analysen</h2>
-                    <select id="carSelectCosts" class="btn btn-secondary" onchange="loadCosts()">
-                        <option value="">Alle Fahrzeuge</option>
-                    </select>
-                </div>
-                
-                <div class="costs-summary" id="costsSummary">
-                    <div class="cost-card">
-                        <div>Gesamtkosten</div>
+                <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px;">Kosten</h2>
+                <div class="costs-summary">
+                    <div class="cost-card" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+                        <div style="font-size: 12px; opacity: 0.9;">Gesamt</div>
                         <div class="cost-amount" id="totalCosts">0 €</div>
-                        <div>Seit Kauf</div>
                     </div>
                     <div class="cost-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                        <div>Dieses Jahr</div>
+                        <div style="font-size: 12px; opacity: 0.9;">Dieses Jahr</div>
                         <div class="cost-amount" id="yearCosts">0 €</div>
-                        <div>2024</div>
                     </div>
                     <div class="cost-card" style="background: linear-gradient(135deg, #10b981, #059669);">
-                        <div>Ø pro km</div>
+                        <div style="font-size: 12px; opacity: 0.9;">Ø pro km</div>
                         <div class="cost-amount" id="costPerKm">0 €</div>
-                        <div>Laufende Kosten</div>
                     </div>
                     <div class="cost-card" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
-                        <div>Ø pro Monat</div>
+                        <div style="font-size: 12px; opacity: 0.9;">Ø pro Monat</div>
                         <div class="cost-amount" id="costPerMonth">0 €</div>
-                        <div>Fixkosten</div>
                     </div>
                 </div>
-                
-                <div class="tabs">
-                    <div class="tab active" onclick="switchTab(this, 'cost-chart')">Kostenverteilung</div>
-                    <div class="tab" onclick="switchTab(this, 'cost-history')">Verlauf</div>
-                    <div class="tab" onclick="switchTab(this, 'cost-parts')">Teilekatalog</div>
-                </div>
-
-                <div id="cost-chart" class="tab-content active">
-                    <div class="chart-container" id="costChart">
-                        <canvas id="costsCanvas" width="600" height="300"></canvas>
-                    </div>
-                </div>
-
-                <div id="cost-history" class="tab-content">
-                    <div id="costHistoryList"></div>
-                </div>
-
-                <div id="cost-parts" class="tab-content">
-                    <div class="filter-tags">
-                        <span class="tag active">Alle</span>
-                        <span class="tag">Verschleißteile</span>
-                        <span class="tag">Filter</span>
-                        <span class="tag">Bremsen</span>
-                    </div>
-                    <div id="partsList"></div>
-                </div>
-
                 <div class="fuel-tracker">
-                    <h3>⛽ Spritverbrauch-Tracker</h3>
+                    <h3 style="margin-bottom: 15px;">⛽ Verbrauch</h3>
                     <div class="fuel-stats">
                         <div>
-                            <div style="font-size: 24px; font-weight: bold;" id="avgConsumption">-- l/100km</div>
-                            <div>Durchschnitt</div>
+                            <div style="font-size: 20px; font-weight: bold;" id="avgConsumption">--</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Ø l/100km</div>
                         </div>
                         <div>
-                            <div style="font-size: 24px; font-weight: bold;" id="lastConsumption">-- l/100km</div>
-                            <div>Letzte Tankfüllung</div>
+                            <div style="font-size: 20px; font-weight: bold;" id="lastConsumption">--</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Letzte</div>
                         </div>
                         <div>
-                            <div style="font-size: 24px; font-weight: bold;" id="totalFuel">-- L</div>
-                            <div>Gesamt getankt</div>
+                            <div style="font-size: 20px; font-weight: bold;" id="totalFuel">--</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Getankt (L)</div>
                         </div>
                         <div>
-                            <div style="font-size: 24px; font-weight: bold;" id="fuelCosts">-- €</div>
-                            <div>Spritkosten</div>
+                            <div style="font-size: 20px; font-weight: bold;" id="fuelCosts">--</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Kosten (€)</div>
                         </div>
                     </div>
-                    <button class="btn btn-secondary" onclick="openFuelModal()" style="margin-top: 15px;">
-                        + Tankfüllung eintragen
-                    </button>
                 </div>
             </div>
         </section>
 
-        <!-- Documents Section -->
         <section id="documents" class="section">
             <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Dokumentenverwaltung</h2>
-                    <button class="btn btn-primary" onclick="openModal('uploadDocModal')">
-                        <span>📤</span> Dokument hochladen
-                    </button>
-                </div>
-                
-                <div class="tabs">
-                    <div class="tab active" onclick="switchTab(this, 'docs-all')">Alle Dokumente</div>
-                    <div class="tab" onclick="switchTab(this, 'docs-expiring')">Läuft ab bald</div>
-                </div>
-
-                <div id="docs-all" class="tab-content active">
-                    <div class="document-grid" id="documentGrid">
-                        <!-- Documents will be loaded here -->
-                    </div>
-                    <div class="document-upload" onclick="openModal('uploadDocModal')">
-                        <div style="font-size: 48px; margin-bottom: 10px;">📁</div>
-                        <h3>Dokument hochladen</h3>
-                        <p>Ziehe Dateien hierher oder klicke zum Auswählen</p>
-                        <small>Unterstützt: PDF, JPG, PNG (max. 10MB)</small>
-                    </div>
-                </div>
-
-                <div id="docs-expiring" class="tab-content">
-                    <div id="expiringDocs"></div>
-                </div>
+                <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px;">Dokumente</h2>
+                <div class="document-grid" id="documentGrid"></div>
+                <button class="btn btn-primary" onclick="openModal('uploadDocModal')" style="width: 100%; margin-top: 20px;">
+                    📤 Dokument hochladen
+                </button>
             </div>
         </section>
 
-        <!-- Trips Section -->
         <section id="trips" class="section">
             <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Fahrtenbuch</h2>
-                    <div>
-                        <button class="btn btn-secondary" onclick="exportTrips()">📊 Exportieren</button>
-                        <button class="btn btn-primary" onclick="openTripModal()">+ Fahrt eintragen</button>
-                    </div>
-                </div>
-                
-                <div class="form-row" style="margin-bottom: 20px;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <select id="tripCarSelect" onchange="loadTrips()">
-                            <option value="">Alle Fahrzeuge</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <select id="tripTypeFilter" onchange="loadTrips()">
-                            <option value="">Alle Fahrten</option>
-                            <option value="business">Geschäftlich</option>
-                            <option value="private">Privat</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="costs-summary" style="margin-bottom: 20px;">
-                    <div class="cost-card" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
-                        <div>Gesamt km</div>
-                        <div class="cost-amount" id="totalTripKm">0</div>
-                    </div>
-                    <div class="cost-card" style="background: linear-gradient(135deg, #10b981, #059669);">
-                        <div>Geschäftlich</div>
-                        <div class="cost-amount" id="businessKm">0</div>
-                    </div>
-                    <div class="cost-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                        <div>Privat</div>
-                        <div class="cost-amount" id="privateKm">0</div>
-                    </div>
-                </div>
-
-                <div class="trip-list" id="tripList"></div>
-            </div>
-        </section>
-
-        <!-- Community Section -->
-        <section id="community" class="section">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Community & Tipps</h2>
-                    <button class="btn btn-primary">+ Beitrag erstellen</button>
-                </div>
-                
-                <div class="search-box">
-                    <input type="text" placeholder="Suche nach Modell, Problem oder Tipp...">
-                </div>
-                
-                <div class="filter-tags">
-                    <span class="tag active">Alle</span>
-                    <span class="tag">Technik</span>
-                    <span class="tag">Kaufberatung</span>
-                    <span class="tag">DIY</span>
-                    <span class="tag">Probleme</span>
-                </div>
-
-                <div id="communityPosts">
-                    <div class="community-post">
-                        <div class="post-header">
-                            <div class="avatar">LS</div>
-                            <div>
-                                <div style="font-weight: bold;">Lisa S.</div>
-                                <div style="font-size: 12px; color: #666;">VW Golf 7 • Vor 3 Stunden</div>
-                            </div>
-                        </div>
-                        <h4>Wasser im Fußraum - was tun?</h4>
-                        <p>Habe seit gestern Wasser im Beifahrerfußraum. Kann das von der Klimaanlage kommen?</p>
-                        <div style="margin-top: 10px; color: #666; font-size: 14px;">
-                            💬 12 Antworten • 👍 5 Hilfreich
-                        </div>
-                    </div>
-                </div>
+                <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px;">Fahrtenbuch</h2>
+                <div id="tripList" class="trip-list"></div>
+                <button class="btn btn-primary" onclick="openTripModal()" style="width: 100%; margin-top: 20px;">
+                    + Fahrt eintragen
+                </button>
             </div>
         </section>
     </div>
 
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="toggleFabMenu()">+</button>
+    <div class="fab-menu" id="fabMenu">
+        <button class="fab-item" onclick="openModal('addCarModal'); toggleFabMenu();">
+            🚗 Auto hinzufügen
+        </button>
+        <button class="fab-item" onclick="openFuelModal(); toggleFabMenu();">
+            ⛽ Tanken
+        </button>
+        <button class="fab-item" onclick="openTripModal(); toggleFabMenu();">
+            🛣️ Fahrt eintragen
+        </button>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="bottom-nav-item active" onclick="showSection('garage')">
+            <span class="bottom-nav-icon">🏠</span>
+            <span>Garage</span>
+        </button>
+        <button class="bottom-nav-item" onclick="showSection('workshop')">
+            <span class="bottom-nav-icon">🔧</span>
+            <span>Werkstatt</span>
+        </button>
+        <button class="bottom-nav-item" onclick="showSection('checkbook')">
+            <span class="bottom-nav-icon">📋</span>
+            <span>Checkheft</span>
+        </button>
+        <button class="bottom-nav-item" onclick="showSection('costs')">
+            <span class="bottom-nav-icon">💰</span>
+            <span>Kosten</span>
+        </button>
+        <button class="bottom-nav-item" onclick="showSection('documents')">
+            <span class="bottom-nav-icon">📄</span>
+            <span>Mehr</span>
+        </button>
+    </nav>
+
+    <!-- Notification Overlay -->
+    <div id="notifOverlay" class="notification-overlay" onclick="toggleNotifications()"></div>
+    
+    <!-- Notification Panel -->
+    <div id="notificationPanel" class="notification-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3>🔔 Erinnerungen</h3>
+            <button onclick="toggleNotifications()" style="background: none; border: none; font-size: 24px;">×</button>
+        </div>
+        <div id="notificationList"></div>
+    </div>
+
+    <!-- Install Banner -->
+    <div id="installBanner" class="install-banner">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="font-size: 40px;">🚗</div>
+            <div>
+                <div style="font-weight: 700;">AutoCare Pro installieren</div>
+                <div style="font-size: 14px; color: #666;">Schneller Zugriff vom Homescreen</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="dismissInstall()" style="background: none; border: none; color: #666; padding: 10px;">Später</button>
+            <button onclick="installApp()" class="btn btn-primary" style="padding: 10px 20px;">Installieren</button>
+        </div>
+    </div>
+
+    <!-- Modals -->
     <!-- Add Car Modal -->
     <div id="addCarModal" class="modal">
         <div class="modal-content">
-            <h2 style="margin-bottom: 25px;">Neues Fahrzeug hinzufügen</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Auto hinzufügen</h2>
+                <button onclick="closeModal('addCarModal')" style="background: none; border: none; font-size: 28px;">×</button>
+            </div>
             <form id="addCarForm" onsubmit="saveCar(event)">
                 <div class="form-row">
                     <div class="form-group">
                         <label>Marke *</label>
                         <select id="carBrand" required onchange="updateModels()">
-                            <option value="">Marke wählen...</option>
+                            <option value="">Wählen...</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Modell *</label>
                         <select id="carModel" required onchange="updateYears()" disabled>
-                            <option value="">Zuerst Marke wählen...</option>
+                            <option value="">Marke wählen...</option>
                         </select>
                     </div>
                 </div>
-                
                 <div class="form-row">
                     <div class="form-group">
                         <label>Baujahr *</label>
-                        <select id="carYear" required onchange="updateEngines()" disabled>
-                            <option value="">Zuerst Modell wählen...</option>
+                        <select id="carYear" required disabled>
+                            <option value="">Modell wählen...</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Motorisierung</label>
-                        <select id="carEngine" disabled>
-                            <option value="">Zuerst Baujahr wählen...</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
                     <div class="form-group">
                         <label>Kennzeichen *</label>
                         <input type="text" id="carPlate" placeholder="M-XX 1234" required>
                     </div>
-                    <div class="form-group">
-                        <label>Aktueller Kilometerstand *</label>
-                        <input type="number" id="carMileage" placeholder="50000" required>
-                    </div>
                 </div>
-
+                <div class="form-group">
+                    <label>Kilometerstand *</label>
+                    <input type="number" id="carMileage" placeholder="50000" required>
+                </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Erstzulassung</label>
-                        <input type="date" id="carFirstReg">
-                    </div>
-                    <div class="form-group">
-                        <label>Nächste TÜV/HU</label>
+                        <label>Nächste TÜV</label>
                         <input type="date" id="carTuv">
                     </div>
-                </div>
-
-                <div class="form-row">
                     <div class="form-group">
-                        <label>Fahrzeug-Identifikationsnummer (VIN)</label>
-                        <input type="text" id="carVin" placeholder="WVWZZZ1JZ3W386752" maxlength="17">
-                    </div>
-                    <div class="form-group">
-                        <label>Schlüsselnummer (HSN/TSN)</label>
-                        <input type="text" id="carKeyNum" placeholder="1234/567">
+                        <label>Motor</label>
+                        <input type="text" id="carEngine" placeholder="z.B. 2.0 TDI">
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <label>Finanzierung/Leasing</label>
-                    <select id="carFinance">
-                        <option value="cash">Barkauf</option>
-                        <option value="credit">Kredit</option>
-                        <option value="leasing">Leasing</option>
-                    </select>
-                </div>
-
-                <div style="display: flex; gap: 15px; margin-top: 25px;">
-                    <button type="button" class="btn" onclick="closeModal('addCarModal')" style="flex: 1; background: #e5e7eb;">
-                        Abbrechen
-                    </button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">
-                        Speichern
-                    </button>
-                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+                    Speichern
+                </button>
             </form>
         </div>
     </div>
 
-    <!-- Add Service Entry Modal -->
-    <div id="addServiceModal" class="modal">
-        <div class="modal-content">
-            <h2 style="margin-bottom: 25px;">Service-Eintrag hinzufügen</h2>
-            <form id="addServiceForm" onsubmit="saveServiceEntry(event)">
-                <input type="hidden" id="serviceCarId">
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Datum *</label>
-                        <input type="date" id="serviceDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Kilometerstand *</label>
-                        <input type="number" id="serviceMileage" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Service-Art *</label>
-                    <select id="serviceType" required>
-                        <option value="inspektion">🔧 Inspektion</option>
-                        <option value="oelwechsel">🛢️ Ölwechsel</option>
-                        <option value="reifen">🚗 Reifenwechsel</option>
-                        <option value="bremsen">🛑 Bremsenservice</option>
-                        <option value="tuev">✓ TÜV/HU</option>
-                        <option value="klima">❄️ Klimaservice</option>
-                        <option value="achsvermessung">📐 Achsvermessung</option>
-                        <option value="getriebe">⚙️ Getriebe</option>
-                        <option value="unfall">💥 Unfallreparatur</option>
-                        <option value="reparatur">🔩 Reparatur</option>
-                        <option value=" tuning">🏎️ Tuning</option>
-                        <option value="sonstiges">📋 Sonstiges</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Beschreibung</label>
-                    <textarea id="serviceDesc" rows="3" placeholder="Was wurde gemacht? Welche Teile wurden getauscht?"></textarea>
-                </div>
-
-                <div class="form-row-3">
-                    <div class="form-group">
-                        <label>Teilekosten (€)</label>
-                        <input type="number" id="servicePartsCost" step="0.01" placeholder="0.00" onchange="calcTotal()">
-                    </div>
-                    <div class="form-group">
-                        <label>Arbeitskosten (€)</label>
-                        <input type="number" id="serviceLaborCost" step="0.01" placeholder="0.00" onchange="calcTotal()">
-                    </div>
-                    <div class="form-group">
-                        <label>Gesamtkosten (€)</label>
-                        <input type="number" id="serviceCost" step="0.01" placeholder="0.00" readonly style="background: #f3f4f6;">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Werkstatt</label>
-                        <select id="serviceWorkshop">
-                            <option value="">Selbst gemacht</option>
-                            <option value="atu">ATU</option>
-                            <option value="pitstop">PIT STOP</option>
-                            <option value="vertrag">Vertragswerkstatt</option>
-                            <option value="frei">Freie Werkstatt</option>
-                            <option value="sonstige">Sonstige</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Rechnungsnummer</label>
-                        <input type="text" id="serviceInvoice" placeholder="RE-2024-001">
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 15px; margin-top: 25px;">
-                    <button type="button" class="btn" onclick="closeModal('addServiceModal')" style="flex: 1; background: #e5e7eb;">
-                        Abbrechen
-                    </button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">
-                        Speichern
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Fuel Entry Modal -->
-    <div id="addFuelModal" class="modal">
-        <div class="modal-content">
-            <h2 style="margin-bottom: 25px;">Tankfüllung eintragen</h2>
-            <form id="addFuelForm" onsubmit="saveFuelEntry(event)">
-                <div class="form-group">
-                    <label>Fahrzeug</label>
-                    <select id="fuelCarId" required></select>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Datum</label>
-                        <input type="date" id="fuelDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Kilometerstand</label>
-                        <input type="number" id="fuelMileage" required>
-                    </div>
-                </div>
-
-                <div class="form-row-3">
-                    <div class="form-group">
-                        <label>Getankte Liter *</label>
-                        <input type="number" id="fuelLiters" step="0.01" required onchange="calcConsumption()">
-                    </div>
-                    <div class="form-group">
-                        <label>Preis pro Liter (€)</label>
-                        <input type="number" id="fuelPrice" step="0.001" onchange="calcConsumption()">
-                    </div>
-                    <div class="form-group">
-                        <label>Gesamtkosten (€)</label>
-                        <input type="number" id="fuelTotalCost" step="0.01" onchange="reverseCalc()">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Tankstelle</label>
-                    <input type="text" id="fuelStation" placeholder="z.B. Shell, Aral...">
-                </div>
-
-                <div class="form-group">
-                    <label>Spritart</label>
-                    <select id="fuelType">
-                        <option value="e5">Super E5</option>
-                        <option value="e10">Super E10</option>
-                        <option value="diesel">Diesel</option>
-                        <option value="premium">Super Plus</option>
-                        <option value="adblue">AdBlue</option>
-                    </select>
-                </div>
-
-                <div style="background: #f0f7ff; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                    <strong>Berechneter Verbrauch:</strong>
-                    <div id="calcConsumption" style="font-size: 24px; color: var(--primary); font-weight: bold;">-- l/100km</div>
-                </div>
-
-                <div style="display: flex; gap: 15px;">
-                    <button type="button" class="btn" onclick="closeModal('addFuelModal')" style="flex: 1; background: #e5e7eb;">
-                        Abbrechen
-                    </button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">
-                        Speichern
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Trip Entry Modal -->
-    <div id="addTripModal" class="modal">
-        <div class="modal-content">
-            <h2 style="margin-bottom: 25px;">Fahrt eintragen</h2>
-            <form id="addTripForm" onsubmit="saveTrip(event)">
-                <div class="form-group">
-                    <label>Fahrzeug</label>
-                    <select id="tripCarId" required></select>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Datum</label>
-                        <input type="date" id="tripDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Fahrtart</label>
-                        <select id="tripType">
-                            <option value="business">Geschäftlich</option>
-                            <option value="private">Privat</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Startort</label>
-                        <input type="text" id="tripStart" placeholder="München" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Zielort</label>
-                        <input type="text" id="tripEnd" placeholder="Stuttgart" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Kilometer (Start)</label>
-                        <input type="number" id="tripKmStart" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Kilometer (Ende)</label>
-                        <input type="number" id="tripKmEnd" required onchange="calcTripKm()">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Gefahrene Strecke: <span id="tripDistance" style="color: var(--primary); font-weight: bold;">0</span> km</label>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="tripProgress" style="width: 0%"></div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Zweck der Fahrt</label>
-                    <input type="text" id="tripPurpose" placeholder="Kundenbesuch, Baustelle, etc.">
-                </div>
-
-                <div style="display: flex; gap: 15px;">
-                    <button type="button" class="btn" onclick="closeModal('addTripModal')" style="flex: 1; background: #e5e7eb;">
-                        Abbrechen
-                    </button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">
-                        Speichern
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Upload Document Modal -->
-    <div id="uploadDocModal" class="modal">
-        <div class="modal-content">
-            <h2 style="margin-bottom: 25px;">Dokument hochladen</h2>
-            <form id="uploadDocForm" onsubmit="saveDocument(event)">
-                <div class="form-group">
-                    <label>Dokumenttyp</label>
-                    <select id="docType" required>
-                        <option value="zulassung">Fahrzeugschein (Zulassungsbescheinigung)</option>
-                        <option value="brief">Fahrzeugbrief</option>
-                        <option value="versicherung">Versicherungsnachweis</option>
-                        <option value="tuev">TÜV-Bericht</option>
-                        <option value="rechnung">Rechnung</option>
-                        <option value="vertrag">Kauf-/Leasingvertrag</option>
-                        <option value="service">Serviceheft (digital)</option>
-                        <option value="sonstiges">Sonstiges</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Betreffendes Fahrzeug</label>
-                    <select id="docCarId" required></select>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Ablaufdatum (falls zutreffend)</label>
-                        <input type="date" id="docExpiry">
-                    </div>
-                    <div class="form-group">
-                        <label>Erinnerung (Tage vorher)</label>
-                        <select id="docReminder">
-                            <option value="0">Keine</option>
-                            <option value="7">1 Woche</option>
-                            <option value="14">2 Wochen</option>
-                            <option value="30">1 Monat</option>
-                            <option value="90">3 Monate</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Datei auswählen</label>
-                    <input type="file" id="docFile" accept=".pdf,.jpg,.jpeg,.png" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Notizen</label>
-                    <textarea id="docNotes" rows="2"></textarea>
-                </div>
-
-                <div style="display: flex; gap: 15px;">
-                    <button type="button" class="btn" onclick="closeModal('uploadDocModal')" style="flex: 1; background: #e5e7eb;">
-                        Abbrechen
-                    </button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">
-                        Hochladen
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Notification Panel -->
-    <div id="notificationPanel" class="notification-panel">
-        <h3 style="margin-bottom: 15px;">🔔 Erinnerungen</h3>
-        <div id="notificationList"></div>
-    </div>
-
+    <!-- Toast -->
     <div id="toast" class="toast"></div>
 
     <script>
-        // Comprehensive Vehicle Database
+        // Vehicle Database (simplified for mobile)
         const vehicleDatabase = {
-            "Audi": {
-                "A1": { years: [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024], 
-                    engines: ["1.0 TFSI 95 PS", "1.4 TFSI 125 PS", "1.6 TDI 116 PS", "2.0 TDI 143 PS", "S1 2.0 TFSI 231 PS"] },
-                "A3": { years: [1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.2 TFSI 105 PS", "1.4 TFSI 125 PS", "1.4 TFSI 150 PS", "1.6 TDI 110 PS", "2.0 TDI 150 PS", "2.0 TFSI 190 PS", "S3 2.0 TFSI 310 PS", "RS3 2.5 TFSI 400 PS", "e-tron 204 PS"] },
-                "A4": { years: [1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.4 TFSI 150 PS", "2.0 TFSI 190 PS", "2.0 TFSI 252 PS", "2.0 TDI 136 PS", "2.0 TDI 163 PS", "2.0 TDI 190 PS", "3.0 TDI 218 PS", "S4 3.0 TFSI 354 PS", "RS4 2.9 TFSI 450 PS"] },
-                "A5": { years: [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["2.0 TFSI 190 PS", "2.0 TFSI 252 PS", "2.0 TDI 190 PS", "3.0 TDI 218 PS", "S5 3.0 TFSI 354 PS", "RS5 2.9 TFSI 450 PS"] },
-                "A6": { years: [1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["2.0 TFSI 245 PS", "2.0 TDI 204 PS", "3.0 TDI 231 PS", "3.0 TDI 286 PS", "S6 2.9 TFSI 450 PS", "RS6 4.0 TFSI 600 PS", "e-tron 367 PS"] },
-                "Q3": { years: [2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.4 TFSI 150 PS", "2.0 TFSI 180 PS", "2.0 TFSI 220 PS", "2.0 TDI 150 PS", "2.0 TDI 184 PS", "RS Q3 2.5 TFSI 400 PS"] },
-                "Q5": { years: [2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["2.0 TFSI 245 PS", "2.0 TDI 190 PS", "3.0 TDI 286 PS", "SQ5 3.0 TDI 347 PS", "SQ5 3.0 TFSI 354 PS"] },
-                "TT": { years: [1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
-                    engines: ["1.8 TFSI 180 PS", "2.0 TFSI 230 PS", "2.0 TFSI 310 PS", "TTS 2.0 TFSI 320 PS", "TT RS 2.5 TFSI 400 PS"] }
-            },
-            "BMW": {
-                "1er": { years: [2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["116i 1.5 109 PS", "118i 1.5 136 PS", "120i 2.0 184 PS", "M135i 2.0 306 PS", "116d 1.5 116 PS", "118d 2.0 150 PS", "120d 2.0 190 PS"] },
-                "3er": { years: [1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["318i 2.0 156 PS", "320i 2.0 184 PS", "330i 2.0 258 PS", "M340i 3.0 374 PS", "316d 2.0 116 PS", "320d 2.0 190 PS", "330d 3.0 265 PS", "M3 3.0 510 PS", "330e Plug-in 292 PS"] },
-                "5er": { years: [1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["520i 2.0 184 PS", "530i 2.0 252 PS", "540i 3.0 333 PS", "M550i 4.4 530 PS", "520d 2.0 190 PS", "530d 3.0 286 PS", "M5 4.4 600 PS", "530e Plug-in 292 PS"] },
-                "X1": { years: [2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["sDrive18i 1.5 140 PS", "sDrive20i 2.0 192 PS", "xDrive25i 2.0 231 PS", "sDrive18d 2.0 150 PS", "xDrive20d 2.0 190 PS"] },
-                "X3": { years: [2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["xDrive20i 2.0 184 PS", "xDrive30i 2.0 252 PS", "xDrive20d 2.0 190 PS", "xDrive30d 3.0 265 PS", "M40i 3.0 360 PS", "xDrive30e Plug-in 292 PS"] },
-                "X5": { years: [1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["xDrive40i 3.0 333 PS", "xDrive45e Plug-in 394 PS", "xDrive30d 3.0 265 PS", "xDrive40d 3.0 352 PS", "M50i 4.4 530 PS", "M Competition 4.4 625 PS"] }
-            },
-            "Mercedes": {
-                "A-Klasse": { years: [1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["A 160 1.3 109 PS", "A 180 1.3 136 PS", "A 200 1.3 163 PS", "A 220 2.0 190 PS", "A 250 2.0 224 PS", "A 35 AMG 2.0 306 PS", "A 45 AMG 2.0 421 PS", "A 180 d 1.5 116 PS", "A 200 d 2.0 150 PS", "A 220 d 2.0 190 PS"] },
-                "C-Klasse": { years: [1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["C 180 1.5 170 PS", "C 200 1.5 204 PS", "C 300 2.0 258 PS", "C 43 AMG 2.0 408 PS", "C 63 AMG 2.0 476 PS", "C 200 d 2.0 163 PS", "C 220 d 2.0 200 PS", "C 300 d 2.0 265 PS", "C 300 e Plug-in 313 PS"] },
-                "E-Klasse": { years: [1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["E 200 2.0 197 PS", "E 300 2.0 258 PS", "E 450 3.0 367 PS", "E 53 AMG 3.0 435 PS", "E 63 AMG 4.0 571 PS", "E 200 d 2.0 160 PS", "E 220 d 2.0 194 PS", "E 300 d 2.0 265 PS", "E 300 e Plug-in 313 PS"] },
-                "GLA": { years: [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["GLA 180 1.3 136 PS", "GLA 200 1.3 163 PS", "GLA 250 2.0 224 PS", "GLA 35 AMG 2.0 306 PS", "GLA 45 AMG 2.0 421 PS", "GLA 180 d 1.5 116 PS", "GLA 200 d 2.0 150 PS", "GLA 220 d 2.0 190 PS"] },
-                "GLC": { years: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["GLC 200 2.0 204 PS", "GLC 300 2.0 258 PS", "GLC 43 AMG 2.0 421 PS", "GLC 63 AMG 4.0 476 PS", "GLC 200 d 2.0 163 PS", "GLC 220 d 2.0 194 PS", "GLC 300 d 2.0 265 PS", "GLC 300 e Plug-in 313 PS"] },
-                "GLE": { years: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["GLE 350 2.0 258 PS", "GLE 450 3.0 367 PS", "GLE 53 AMG 3.0 435 PS", "GLE 63 AMG 4.0 571 PS", "GLE 300 d 2.0 245 PS", "GLE 350 d 3.0 272 PS", "GLE 400 d 3.0 330 PS", "GLE 350 e Plug-in 333 PS"] }
-            },
-            "VW": {
-                "Polo": { years: [1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.0 MPI 65 PS", "1.0 TSI 95 PS", "1.0 TSI 110 PS", "1.5 TSI 150 PS", "2.0 GTI 207 PS", "1.6 TDI 95 PS", "1.6 TDI 115 PS", "2.0 GTI 320 PS"] },
-                "Golf": { years: [1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.0 TSI 90 PS", "1.0 TSI 110 PS", "1.5 TSI 130 PS", "1.5 TSI 150 PS", "2.0 GTI 245 PS", "2.0 GTI 300 PS", "2.0 R 320 PS", "1.6 TDI 115 PS", "2.0 TDI 150 PS", "2.0 TDI 200 PS", "1.5 TGI 130 PS", "GTE Plug-in 204 PS", "GTE Plug-in 245 PS"] },
-                "Passat": { years: [1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.5 TSI 150 PS", "2.0 TSI 190 PS", "2.0 TSI 280 PS", "1.6 TDI 120 PS", "2.0 TDI 150 PS", "2.0 TDI 200 PS", "2.0 TDI 240 PS", "GTE Plug-in 218 PS"] },
-                "Tiguan": { years: [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.4 TSI 125 PS", "1.5 TSI 150 PS", "2.0 TSI 190 PS", "2.0 TSI 245 PS", "2.0 TDI 150 PS", "2.0 TDI 200 PS", "2.0 TDI 240 PS", "eHybrid Plug-in 245 PS"] },
-                "T-Roc": { years: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.0 TSI 110 PS", "1.5 TSI 150 PS", "2.0 TSI 190 PS", "2.0 TSI 300 PS R", "1.6 TDI 115 PS", "2.0 TDI 150 PS"] },
-                "Arteon": { years: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.5 TSI 150 PS", "2.0 TSI 190 PS", "2.0 TSI 280 PS", "2.0 TDI 150 PS", "2.0 TDI 200 PS", "eHybrid Plug-in 218 PS"] },
-                "ID.3": { years: [2020, 2021, 2022, 2023, 2024],
-                    engines: ["Pro 150 kW (204 PS)", "Pro S 150 kW (204 PS)", "GTX 220 kW (299 PS)"] },
-                "ID.4": { years: [2020, 2021, 2022, 2023, 2024],
-                    engines: ["Pure 109 kW (148 PS)", "Pro 150 kW (204 PS)", "GTX 220 kW (299 PS)"] }
-            },
-            "Opel": {
-                "Corsa": { years: [1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.2 75 PS", "1.2 Turbo 100 PS", "1.2 Turbo 130 PS", "1.5 Diesel 102 PS", "e-Corsa Elektro 136 PS"] },
-                "Astra": { years: [1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.2 Turbo 110 PS", "1.2 Turbo 130 PS", "1.2 Turbo 145 PS", "1.5 Diesel 122 PS", "1.6 Turbo 200 PS GSe", "1.6 Plug-in 225 PS"] },
-                "Insignia": { years: [2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022],
-                    engines: ["1.5 Turbo 140 PS", "1.5 Turbo 165 PS", "2.0 Turbo 200 PS", "2.0 Turbo 230 PS", "2.0 Diesel 174 PS", "2.0 Diesel 210 PS"] },
-                "Mokka": { years: [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.2 Turbo 100 PS", "1.2 Turbo 130 PS", "1.5 Diesel 110 PS", "e-Mokka Elektro 136 PS"] },
-                "Grandland": { years: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.2 Turbo 130 PS", "1.6 Turbo 180 PS", "1.5 Diesel 130 PS", "Hybrid 225 PS", "Hybrid4 300 PS"] }
-            },
-            "Ford": {
-                "Fiesta": { years: [1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
-                    engines: ["1.0 EcoBoost 95 PS", "1.0 EcoBoost 125 PS", "1.0 EcoBoost 155 PS", "1.5 TDCi 85 PS", "1.5 TDCi 120 PS", "1.5 EcoBoost 200 PS ST"] },
-                "Focus": { years: [1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.0 EcoBoost 100 PS", "1.0 EcoBoost 125 PS", "1.0 EcoBoost 155 PS", "1.5 EcoBoost 150 PS", "2.3 EcoBoost 280 PS ST", "1.5 EcoBlue 95 PS", "1.5 EcoBlue 120 PS", "2.0 EcoBlue 150 PS"] },
-                "Kuga": { years: [2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.5 EcoBoost 150 PS", "2.0 EcoBoost 190 PS", "2.5 Plug-in 225 PS", "1.5 EcoBlue 120 PS", "2.0 EcoBlue 150 PS", "2.0 EcoBlue 190 PS", "2.5 Hybrid 190 PS"] },
-                "Puma": { years: [2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.0 EcoBoost 125 PS", "1.0 EcoBoost 155 PS", "1.0 EcoBoost 170 PS ST-Line", "1.5 EcoBoost 200 PS ST"] },
-                "Mustang": { years: [1964, 1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["2.3 EcoBoost 290 PS", "5.0 V8 450 PS GT", "5.0 V8 460 PS Mach 1", "5.2 V8 760 PS Shelby GT500", "Mach-E Elektro 269-487 PS"] }
-            },
-            "Toyota": {
-                "Yaris": { years: [1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.0 VVT-i 72 PS", "1.5 Hybrid 116 PS", "1.6 GR 261 PS", "1.5 VVT-i 125 PS"] },
-                "Corolla": { years: [1966, 1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["1.2 Turbo 116 PS", "1.8 Hybrid 122 PS", "2.0 Hybrid 180 PS", "2.0 GR 300 PS"] },
-                "RAV4": { years: [1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["2.0 175 PS", "2.5 Hybrid 222 PS", "2.5 Plug-in 306 PS", "2.5 Hybrid 218 PS AWD"] },
-                "Camry": { years: [1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["2.5 Hybrid 218 PS", "3.5 V6 301 PS"] },
-                "GR Supra": { years: [2019, 2020, 2021, 2022, 2023, 2024],
-                    engines: ["2.0 Turbo 258 PS", "3.0 Turbo 340 PS", "3.0 Turbo 387 PS"] }
-            },
-            "Andere": {
-                "Manuell eingeben": { years: [], engines: [] }
-            }
+            "Audi": ["A1", "A3", "A4", "A5", "A6", "Q3", "Q5", "TT"],
+            "BMW": ["1er", "3er", "5er", "X1", "X3", "X5"],
+            "Mercedes": ["A-Klasse", "C-Klasse", "E-Klasse", "GLA", "GLC", "GLE"],
+            "VW": ["Polo", "Golf", "Passat", "Tiguan", "T-Roc", "ID.3", "ID.4"],
+            "Opel": ["Corsa", "Astra", "Insignia", "Mokka", "Grandland"],
+            "Ford": ["Fiesta", "Focus", "Kuga", "Puma", "Mustang"],
+            "Toyota": ["Yaris", "Corolla", "RAV4", "Camry", "GR Supra"]
         };
+
+        const years = Array.from({length: 35}, (_, i) => 2024 - i);
 
         // Data Storage
         let cars = JSON.parse(localStorage.getItem('cars')) || [];
         let serviceEntries = JSON.parse(localStorage.getItem('serviceEntries')) || [];
         let fuelEntries = JSON.parse(localStorage.getItem('fuelEntries')) || [];
         let trips = JSON.parse(localStorage.getItem('trips')) || [];
-        let documents = JSON.parse(localStorage.getItem('documents')) || [];
+        let deferredPrompt = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             initBrandSelect();
             renderGarage();
             updateCarSelects();
-            loadDocuments();
-            loadTrips();
             checkReminders();
+            setupPullToRefresh();
+            setupOfflineDetection();
             
-            // Set today's date as default
-            document.getElementById('serviceDate').valueAsDate = new Date();
-            document.getElementById('fuelDate').valueAsDate = new Date();
-            document.getElementById('tripDate').valueAsDate = new Date();
+            // Check for install prompt
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                setTimeout(() => {
+                    document.getElementById('installBanner').classList.add('show');
+                }, 2000);
+            });
         });
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:text/javascript;base64,' + btoa(`
+                self.addEventListener('install', e => self.skipWaiting());
+                self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+                self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+            `)).catch(() => console.log('SW registration skipped'));
+        }
 
         // Initialize Brand Select
         function initBrandSelect() {
@@ -1730,162 +1329,104 @@
             });
         }
 
-        // Update Models based on Brand
         function updateModels() {
             const brand = document.getElementById('carBrand').value;
             const modelSelect = document.getElementById('carModel');
-            const yearSelect = document.getElementById('carYear');
-            const engineSelect = document.getElementById('carEngine');
+            modelSelect.innerHTML = '<option value="">Wählen...</option>';
             
-            modelSelect.innerHTML = '<option value="">Modell wählen...</option>';
-            yearSelect.innerHTML = '<option value="">Zuerst Modell wählen...</option>';
-            engineSelect.innerHTML = '<option value="">Zuerst Baujahr wählen...</option>';
-            
-            yearSelect.disabled = true;
-            engineSelect.disabled = true;
-            
-            if (brand && vehicleDatabase[brand]) {
-                Object.keys(vehicleDatabase[brand]).forEach(model => {
+            if (vehicleDatabase[brand]) {
+                vehicleDatabase[brand].forEach(model => {
                     const option = document.createElement('option');
                     option.value = model;
                     option.textContent = model;
                     modelSelect.appendChild(option);
                 });
                 modelSelect.disabled = false;
-            } else {
-                modelSelect.disabled = true;
             }
         }
 
-        // Update Years based on Model
         function updateYears() {
-            const brand = document.getElementById('carBrand').value;
-            const model = document.getElementById('carModel').value;
             const yearSelect = document.getElementById('carYear');
-            const engineSelect = document.getElementById('carEngine');
-            
-            yearSelect.innerHTML = '<option value="">Baujahr wählen...</option>';
-            engineSelect.innerHTML = '<option value="">Zuerst Baujahr wählen...</option>';
-            engineSelect.disabled = true;
-            
-            if (brand && model && vehicleDatabase[brand][model]) {
-                const years = vehicleDatabase[brand][model].years;
-                years.forEach(year => {
-                    const option = document.createElement('option');
-                    option.value = year;
-                    option.textContent = year;
-                    yearSelect.appendChild(option);
-                });
-                yearSelect.disabled = false;
-            } else {
-                yearSelect.disabled = true;
-            }
-        }
-
-        // Update Engines based on Year
-        function updateEngines() {
-            const brand = document.getElementById('carBrand').value;
-            const model = document.getElementById('carModel').value;
-            const engineSelect = document.getElementById('carEngine');
-            
-            engineSelect.innerHTML = '<option value="">Motor wählen...</option>';
-            
-            if (brand === 'Andere') {
-                engineSelect.innerHTML += '<option value="custom">Manuell eingeben</option>';
-                engineSelect.disabled = false;
-                return;
-            }
-            
-            if (brand && model && vehicleDatabase[brand][model]) {
-                const engines = vehicleDatabase[brand][model].engines;
-                engines.forEach(engine => {
-                    const option = document.createElement('option');
-                    option.value = engine;
-                    option.textContent = engine;
-                    engineSelect.appendChild(option);
-                });
-                engineSelect.disabled = false;
-            }
+            yearSelect.innerHTML = '<option value="">Wählen...</option>';
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            });
+            yearSelect.disabled = false;
         }
 
         // Navigation
         function showSection(sectionId) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             
             document.getElementById(sectionId).classList.add('active');
-            event.target.closest('.nav-btn').classList.add('active');
             
-            // Hide quick actions for some sections
-            const quickActions = document.getElementById('quickActions');
-            if (sectionId === 'documents' || sectionId === 'community') {
-                quickActions.style.display = 'none';
-            } else {
-                quickActions.style.display = 'grid';
+            // Update bottom nav
+            const navItems = document.querySelectorAll('.bottom-nav-item');
+            const sections = ['garage', 'workshop', 'checkbook', 'costs', 'documents'];
+            const index = sections.indexOf(sectionId);
+            if (index > -1 && navItems[index]) {
+                navItems[index].classList.add('active');
             }
             
+            // Load section data
             if (sectionId === 'checkbook') loadCheckbook();
             if (sectionId === 'costs') loadCosts();
             if (sectionId === 'trips') loadTrips();
             if (sectionId === 'documents') loadDocuments();
-        }
-
-        function switchTab(tab, contentId) {
-            tab.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
             
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById(contentId).classList.add('active');
+            // Close FAB menu
+            document.getElementById('fabMenu').classList.remove('show');
         }
 
         // Modal Functions
         function openModal(modalId) {
             document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // FAB Menu
+        function toggleFabMenu() {
+            document.getElementById('fabMenu').classList.toggle('show');
         }
 
         // Car Management
         function saveCar(event) {
             event.preventDefault();
             
-            const brand = document.getElementById('carBrand').value;
-            const model = document.getElementById('carModel').value;
-            
             const car = {
                 id: Date.now(),
-                brand: brand,
-                model: model === 'Manuell eingeben' ? document.getElementById('carModel').value : model,
-                year: parseInt(document.getElementById('carYear').value) || new Date().getFullYear(),
+                brand: document.getElementById('carBrand').value,
+                model: document.getElementById('carModel').value,
+                year: parseInt(document.getElementById('carYear').value),
                 plate: document.getElementById('carPlate').value,
                 engine: document.getElementById('carEngine').value,
                 mileage: parseInt(document.getElementById('carMileage').value),
-                firstReg: document.getElementById('carFirstReg').value,
                 tuv: document.getElementById('carTuv').value,
-                vin: document.getElementById('carVin').value,
-                keyNum: document.getElementById('carKeyNum').value,
-                finance: document.getElementById('carFinance').value,
                 added: new Date().toISOString()
             };
             
             cars.push(car);
             localStorage.setItem('cars', JSON.stringify(cars));
             
-            // Create initial TÜV entry if provided
             if (car.tuv) {
                 serviceEntries.push({
-                    id: Date.now() + 1,
+                    id: Date.now(),
                     carId: car.id,
                     date: car.tuv,
                     mileage: car.mileage,
                     type: 'tuev',
                     desc: 'TÜV/Hauptuntersuchung',
-                    partsCost: 0,
-                    laborCost: 0,
-                    cost: 0,
-                    workshop: ''
+                    cost: 0
                 });
                 localStorage.setItem('serviceEntries', JSON.stringify(serviceEntries));
             }
@@ -1894,33 +1435,27 @@
             updateCarSelects();
             closeModal('addCarModal');
             document.getElementById('addCarForm').reset();
+            showToast('Auto gespeichert!');
             
-            // Reset dependent selects
-            document.getElementById('carModel').disabled = true;
-            document.getElementById('carYear').disabled = true;
-            document.getElementById('carEngine').disabled = true;
-            
-            showToast('Fahrzeug erfolgreich hinzugefügt!');
-            checkReminders();
+            // Haptic feedback
+            if (navigator.vibrate) navigator.vibrate(50);
         }
 
         function deleteCar(id) {
-            if (confirm('Möchtest du dieses Fahrzeug wirklich löschen? Alle dazugehörigen Daten werden entfernt.')) {
+            if (confirm('Auto wirklich löschen?')) {
                 cars = cars.filter(c => c.id !== id);
                 serviceEntries = serviceEntries.filter(e => e.carId !== id);
                 fuelEntries = fuelEntries.filter(f => f.carId !== id);
                 trips = trips.filter(t => t.carId !== id);
-                documents = documents.filter(d => d.carId !== id);
                 
                 localStorage.setItem('cars', JSON.stringify(cars));
                 localStorage.setItem('serviceEntries', JSON.stringify(serviceEntries));
                 localStorage.setItem('fuelEntries', JSON.stringify(fuelEntries));
                 localStorage.setItem('trips', JSON.stringify(trips));
-                localStorage.setItem('documents', JSON.stringify(documents));
                 
                 renderGarage();
                 updateCarSelects();
-                showToast('Fahrzeug gelöscht');
+                showToast('Auto gelöscht');
             }
         }
 
@@ -1929,13 +1464,10 @@
             
             if (cars.length === 0) {
                 grid.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1/-1;">
+                    <div class="empty-state">
                         <div class="empty-state-icon">🏎️</div>
                         <h3>Deine Garage ist leer</h3>
-                        <p>Füge dein erstes Fahrzeug hinzu, um loszulegen.</p>
-                        <button class="btn btn-primary" onclick="openModal('addCarModal')" style="margin-top: 20px;">
-                            Auto hinzufügen
-                        </button>
+                        <p>Füge dein erstes Auto hinzu</p>
                     </div>
                 `;
                 return;
@@ -1943,25 +1475,22 @@
             
             grid.innerHTML = cars.map(car => {
                 const entries = serviceEntries.filter(e => e.carId === car.id);
-                const totalCosts = entries.reduce((sum, e) => sum + (parseFloat(e.cost) || 0), 0);
+                const totalCosts = entries.reduce((sum, e) => sum + (e.cost || 0), 0);
                 const nextTuv = car.tuv ? new Date(car.tuv) : null;
-                const today = new Date();
-                const daysUntilTuv = nextTuv ? Math.ceil((nextTuv - today) / (1000 * 60 * 60 * 24)) : null;
-                const tuvWarning = daysUntilTuv !== null && daysUntilTuv < 30;
-                const tuvExpired = daysUntilTuv !== null && daysUntilTuv < 0;
+                const daysLeft = nextTuv ? Math.ceil((nextTuv - new Date()) / (1000 * 60 * 60 * 24)) : null;
+                const tuvWarning = daysLeft !== null && daysLeft < 30;
                 
                 return `
-                    <div class="car-card">
-                        <button class="delete-btn" onclick="deleteCar(${car.id})">×</button>
-                        ${tuvWarning ? `<div class="reminder-badge" style="${tuvExpired ? 'background: #000;' : ''}">${tuvExpired ? '‼' : '!'}</div>` : ''}
+                    <div class="car-card" onclick="openServiceModal(${car.id})">
+                        ${tuvWarning ? `<div class="reminder-badge">${daysLeft < 0 ? '‼' : '!'}</div>` : ''}
+                        <button class="delete-btn" onclick="event.stopPropagation(); deleteCar(${car.id})">×</button>
                         <div class="car-image">
                             <div class="car-badge">${car.year}</div>
                             🚗
                         </div>
-                        <div class="car-name">${car.brand} ${car.model}</div>
-                        <div class="car-details">
-                            ${car.engine || 'k.A.'}<br>
-                            ${car.plate || 'Kein Kennzeichen'}
+                        <div style="font-size: 20px; font-weight: 700; margin-bottom: 5px;">${car.brand} ${car.model}</div>
+                        <div style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                            ${car.plate}<br>${car.engine || ''}
                         </div>
                         <div class="car-stats">
                             <div class="stat">
@@ -1977,16 +1506,12 @@
                                 <div class="stat-label">Kosten</div>
                             </div>
                             <div class="stat">
-                                <div class="stat-value" style="${tuvExpired ? 'color: var(--danger);' : tuvWarning ? 'color: var(--secondary);' : ''}">
-                                    ${car.tuv ? daysUntilTuv + ' Tg' : '--'}
+                                <div class="stat-value" style="${tuvWarning ? 'color: var(--danger);' : ''}">
+                                    ${daysLeft !== null ? (daysLeft < 0 ? 'ABGEL' : daysLeft + 'T') : '--'}
                                 </div>
                                 <div class="stat-label">TÜV</div>
                             </div>
                         </div>
-                        <button class="btn btn-primary" style="width: 100%; margin-top: 15px;" 
-                                onclick="openServiceModal(${car.id})">
-                            + Service eintragen
-                        </button>
                     </div>
                 `;
             }).join('');
@@ -1994,502 +1519,237 @@
 
         function updateCarSelects() {
             const options = cars.map(c => `<option value="${c.id}">${c.brand} ${c.model}</option>`).join('');
-            
-            document.getElementById('carSelectCheckbook').innerHTML = '<option value="">Fahrzeug wählen...</option>' + options;
-            document.getElementById('carSelectCosts').innerHTML = '<option value="">Alle Fahrzeuge</option>' + options;
-            document.getElementById('tripCarSelect').innerHTML = '<option value="">Alle Fahrzeuge</option>' + options;
-            
-            // Update modal selects
-            document.getElementById('fuelCarId').innerHTML = options;
-            document.getElementById('tripCarId').innerHTML = options;
-            document.getElementById('docCarId').innerHTML = options;
+            document.getElementById('carSelectCheckbook').innerHTML = '<option value="">Wählen...</option>' + options;
         }
 
-        // Service/Checkbook Management
+        // Service Modal
         function openServiceModal(carId) {
-            document.getElementById('serviceCarId').value = carId;
+            // Simplified for mobile - directly add entry
             const car = cars.find(c => c.id === carId);
-            document.getElementById('serviceMileage').value = car ? car.mileage : '';
-            document.getElementById('serviceDate').valueAsDate = new Date();
-            openModal('addServiceModal');
-        }
-
-        function calcTotal() {
-            const parts = parseFloat(document.getElementById('servicePartsCost').value) || 0;
-            const labor = parseFloat(document.getElementById('serviceLaborCost').value) || 0;
-            document.getElementById('serviceCost').value = (parts + labor).toFixed(2);
-        }
-
-        function saveServiceEntry(event) {
-            event.preventDefault();
+            const type = prompt(`Service für ${car.brand} ${car.model}:\n1. Inspektion\n2. Ölwechsel\n3. Reifen\n4. TÜV\n5. Reparatur\n6. Sonstiges\n\nNummer eingeben:`);
             
-            const entry = {
-                id: Date.now(),
-                carId: parseInt(document.getElementById('serviceCarId').value),
-                date: document.getElementById('serviceDate').value,
-                mileage: parseInt(document.getElementById('serviceMileage').value),
-                type: document.getElementById('serviceType').value,
-                desc: document.getElementById('serviceDesc').value,
-                partsCost: parseFloat(document.getElementById('servicePartsCost').value) || 0,
-                laborCost: parseFloat(document.getElementById('serviceLaborCost').value) || 0,
-                cost: parseFloat(document.getElementById('serviceCost').value) || 0,
-                workshop: document.getElementById('serviceWorkshop').value,
-                invoice: document.getElementById('serviceInvoice').value
+            if (!type) return;
+            
+            const types = ['', 'inspektion', 'oelwechsel', 'reifen', 'tuev', 'reparatur', 'sonstiges'];
+            const typeLabels = {
+                'inspektion': 'Inspektion',
+                'oelwechsel': 'Ölwechsel',
+                'reifen': 'Reifenwechsel',
+                'tuev': 'TÜV',
+                'reparatur': 'Reparatur',
+                'sonstiges': 'Sonstiges'
             };
             
-            serviceEntries.push(entry);
-            
-            // Update car mileage if higher
-            const car = cars.find(c => c.id === entry.carId);
-            if (car && entry.mileage > car.mileage) {
-                car.mileage = entry.mileage;
-                localStorage.setItem('cars', JSON.stringify(cars));
+            if (types[type]) {
+                const cost = prompt('Kosten in € (optional):') || 0;
+                const entry = {
+                    id: Date.now(),
+                    carId: carId,
+                    date: new Date().toISOString().split('T')[0],
+                    mileage: car.mileage,
+                    type: types[type],
+                    desc: typeLabels[types[type]],
+                    cost: parseFloat(cost)
+                };
+                
+                serviceEntries.push(entry);
+                localStorage.setItem('serviceEntries', JSON.stringify(serviceEntries));
+                showToast('Service eingetragen!');
                 renderGarage();
             }
-            
-            localStorage.setItem('serviceEntries', JSON.stringify(serviceEntries));
-            closeModal('addServiceModal');
-            document.getElementById('addServiceForm').reset();
-            
-            if (document.getElementById('checkbook').classList.contains('active')) {
-                loadCheckbook();
-            }
-            showToast('Service-Eintrag gespeichert!');
         }
 
+        // Checkbook
         function loadCheckbook() {
             const carId = document.getElementById('carSelectCheckbook').value;
             const container = document.getElementById('checkbookContent');
             
             if (!carId) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📖</div>
-                        <h3>Wähle ein Fahrzeug aus</h3>
-                        <p>Um das Checkheft zu sehen, wähle bitte ein Auto aus deiner Garage.</p>
-                    </div>
-                `;
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📖</div><p>Wähle ein Fahrzeug</p></div>';
                 return;
             }
             
-            const car = cars.find(c => c.id === parseInt(carId));
             const entries = serviceEntries
                 .filter(e => e.carId === parseInt(carId))
                 .sort((a, b) => new Date(b.date) - new Date(a.date));
             
-            const typeLabels = {
-                'inspektion': '🔧 Inspektion',
-                'oelwechsel': '🛢️ Ölwechsel',
-                'reifen': '🚗 Reifenwechsel',
-                'bremsen': '🛑 Bremsenservice',
-                'tuev': '✓ TÜV/HU',
-                'klima': '❄️ Klimaservice',
-                'achsvermessung': '📐 Achsvermessung',
-                'getriebe': '⚙️ Getriebe',
-                'unfall': '💥 Unfallreparatur',
-                'reparatur': '🔩 Reparatur',
-                'tuning': '🏎️ Tuning',
-                'sonstiges': '📋 Sonstiges'
+            const typeEmojis = {
+                'inspektion': '🔧', 'oelwechsel': '🛢️', 'reifen': '🚗',
+                'tuev': '✓', 'reparatur': '🔩', 'sonstiges': '📋'
             };
             
-            container.innerHTML = `
-                <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <h3>${car.brand} ${car.model}</h3>
-                    <button class="btn btn-primary" onclick="openServiceModal(${car.id})">
-                        + Neuer Eintrag
-                    </button>
-                </div>
-                ${entries.length === 0 ? '<p>Noch keine Einträge vorhanden.</p>' : 
-                    entries.map(e => `
-                        <div class="checkbook-entry">
-                            <div class="entry-header">
-                                <span class="entry-date">${new Date(e.date).toLocaleDateString('de-DE')}</span>
-                                <span class="entry-type">${typeLabels[e.type] || e.type}</span>
-                            </div>
-                            <div style="margin-bottom: 10px;">
-                                <strong>${e.mileage.toLocaleString()} km</strong>
-                                ${e.workshop ? `• ${e.workshop}` : ''}
-                            </div>
-                            ${e.desc ? `<div style="color: #6b7280; margin-bottom: 10px;">${e.desc}</div>` : ''}
-                            ${e.cost > 0 ? `<div style="font-weight: bold; color: var(--primary);">${e.cost.toFixed(2)} €</div>` : ''}
-                        </div>
-                    `).join('')}
-            `;
-        }
-
-        // Costs Analysis
-        function loadCosts() {
-            const carId = document.getElementById('carSelectCosts').value;
-            
-            let relevantEntries = serviceEntries;
-            let relevantFuel = fuelEntries;
-            
-            if (carId) {
-                relevantEntries = serviceEntries.filter(e => e.carId === parseInt(carId));
-                relevantFuel = fuelEntries.filter(f => f.carId === parseInt(carId));
-            }
-            
-            const totalServiceCosts = relevantEntries.reduce((sum, e) => sum + (parseFloat(e.cost) || 0), 0);
-            const totalFuelCosts = relevantFuel.reduce((sum, f) => sum + (parseFloat(f.totalCost) || 0), 0);
-            const totalCosts = totalServiceCosts + totalFuelCosts;
-            
-            const thisYear = new Date().getFullYear();
-            const yearServiceCosts = relevantEntries
-                .filter(e => new Date(e.date).getFullYear() === thisYear)
-                .reduce((sum, e) => sum + (parseFloat(e.cost) || 0), 0);
-            const yearFuelCosts = relevantFuel
-                .filter(f => new Date(f.date).getFullYear() === thisYear)
-                .reduce((sum, f) => sum + (parseFloat(f.totalCost) || 0), 0);
-            const yearCosts = yearServiceCosts + yearFuelCosts;
-            
-            // Calculate cost per km
-            let costPerKm = 0;
-            let costPerMonth = 0;
-            
-            if (carId) {
-                const car = cars.find(c => c.id === parseInt(carId));
-                if (car && car.mileage > 0) {
-                    costPerKm = totalCosts / car.mileage;
-                }
-                
-                // Calculate months since purchase or first entry
-                const firstEntry = relevantEntries.concat(relevantFuel)
-                    .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
-                if (firstEntry) {
-                    const months = Math.max(1, Math.ceil((new Date() - new Date(firstEntry.date)) / (1000 * 60 * 60 * 24 * 30)));
-                    costPerMonth = totalCosts / months;
-                }
-            }
-            
-            document.getElementById('totalCosts').textContent = totalCosts.toFixed(0) + ' €';
-            document.getElementById('yearCosts').textContent = yearCosts.toFixed(0) + ' €';
-            document.getElementById('costPerKm').textContent = costPerKm.toFixed(2) + ' €';
-            document.getElementById('costPerMonth').textContent = costPerMonth.toFixed(0) + ' €';
-            
-            drawCostChart(relevantEntries);
-            updateFuelStats(carId);
-            loadCostHistory(relevantEntries);
-        }
-
-        function drawCostChart(entries) {
-            const canvas = document.getElementById('costsCanvas');
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Group by type
-            const costsByType = {};
-            entries.forEach(e => {
-                costsByType[e.type] = (costsByType[e.type] || 0) + (parseFloat(e.cost) || 0);
-            });
-            
-            const types = Object.keys(costsByType);
-            const values = Object.values(costsByType);
-            const total = values.reduce((a, b) => a + b, 0);
-            
-            if (total === 0) {
-                ctx.fillStyle = '#9ca3af';
-                ctx.font = '16px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('Keine Kostendaten verfügbar', canvas.width/2, canvas.height/2);
-                return;
-            }
-            
-            // Draw pie chart
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = 100;
-            
-            const colors = ['#2563eb', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-            let currentAngle = 0;
-            
-            const typeLabels = {
-                'inspektion': 'Inspektion',
-                'oelwechsel': 'Ölwechsel',
-                'reifen': 'Reifen',
-                'bremsen': 'Bremsen',
-                'tuev': 'TÜV',
-                'klima': 'Klima',
-                'reparatur': 'Reparatur',
-                'unfall': 'Unfall',
-                'sonstiges': 'Sonst.'
-            };
-            
-            types.forEach((type, i) => {
-                const sliceAngle = (values[i] / total) * 2 * Math.PI;
-                
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
-                ctx.closePath();
-                ctx.fillStyle = colors[i % colors.length];
-                ctx.fill();
-                
-                // Label
-                const labelAngle = currentAngle + sliceAngle / 2;
-                const labelX = centerX + Math.cos(labelAngle) * (radius + 30);
-                const labelY = centerY + Math.sin(labelAngle) * (radius + 30);
-                
-                ctx.fillStyle = '#1f2937';
-                ctx.font = '12px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(typeLabels[type] || type, labelX, labelY);
-                ctx.fillText(values[i].toFixed(0) + '€', labelX, labelY + 15);
-                
-                currentAngle += sliceAngle;
-            });
-        }
-
-        function loadCostHistory(entries) {
-            const container = document.getElementById('costHistoryList');
-            const sorted = entries.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            container.innerHTML = sorted.map(e => `
-                <div class="trip-item">
-                    <div>
-                        <strong>${new Date(e.date).toLocaleDateString('de-DE')}</strong>
-                        <div style="color: #666; font-size: 14px;">${e.desc || 'Service'}</div>
+            container.innerHTML = entries.map(e => `
+                <div class="checkbook-entry">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-weight: 700; color: var(--primary);">
+                            ${typeEmojis[e.type] || '📋'} ${new Date(e.date).toLocaleDateString('de-DE')}
+                        </span>
+                        <span style="background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px;">
+                            ${e.mileage.toLocaleString()} km
+                        </span>
                     </div>
-                    <div style="font-weight: bold; color: var(--primary);">${e.cost.toFixed(2)} €</div>
+                    <div style="color: #666;">${e.desc}</div>
+                    ${e.cost > 0 ? `<div style="font-weight: bold; color: var(--primary); margin-top: 8px;">${e.cost.toFixed(2)} €</div>` : ''}
                 </div>
             `).join('') || '<p>Keine Einträge vorhanden.</p>';
         }
 
-        function updateFuelStats(carId) {
-            if (!carId) {
-                document.getElementById('avgConsumption').textContent = '-- l/100km';
-                document.getElementById('lastConsumption').textContent = '-- l/100km';
-                document.getElementById('totalFuel').textContent = '-- L';
-                document.getElementById('fuelCosts').textContent = '-- €';
-                return;
-            }
+        // Costs
+        function loadCosts() {
+            const totalService = serviceEntries.reduce((sum, e) => sum + (e.cost || 0), 0);
+            const totalFuel = fuelEntries.reduce((sum, f) => sum + (f.totalCost || 0), 0);
+            const total = totalService + totalFuel;
             
-            const entries = fuelEntries.filter(f => f.carId === parseInt(carId));
+            const thisYear = new Date().getFullYear();
+            const yearService = serviceEntries
+                .filter(e => new Date(e.date).getFullYear() === thisYear)
+                .reduce((sum, e) => sum + (e.cost || 0), 0);
+            const yearFuel = fuelEntries
+                .filter(f => new Date(f.date).getFullYear() === thisYear)
+                .reduce((sum, f) => sum + (f.totalCost || 0), 0);
+            const yearTotal = yearService + yearFuel;
             
-            if (entries.length === 0) {
-                document.getElementById('avgConsumption').textContent = '-- l/100km';
-                document.getElementById('lastConsumption').textContent = '-- l/100km';
-                document.getElementById('totalFuel').textContent = '-- L';
-                document.getElementById('fuelCosts').textContent = '-- €';
-                return;
-            }
+            let costPerKm = 0;
+            let costPerMonth = 0;
             
-            const totalLiters = entries.reduce((sum, e) => sum + e.liters, 0);
-            const totalCosts = entries.reduce((sum, e) => sum + (e.totalCost || 0), 0);
-            const avgConsumption = entries.reduce((sum, e) => sum + e.consumption, 0) / entries.length;
-            const lastConsumption = entries[entries.length - 1].consumption;
-            
-            document.getElementById('avgConsumption').textContent = avgConsumption.toFixed(1) + ' l/100km';
-            document.getElementById('lastConsumption').textContent = lastConsumption.toFixed(1) + ' l/100km';
-            document.getElementById('totalFuel').textContent = totalLiters.toFixed(0) + ' L';
-            document.getElementById('fuelCosts').textContent = totalCosts.toFixed(0) + ' €';
-        }
-
-        // Fuel Management
-        function openFuelModal() {
-            if (cars.length === 0) {
-                showToast('Bitte zuerst ein Fahrzeug hinzufügen!');
-                return;
-            }
-            document.getElementById('fuelDate').valueAsDate = new Date();
-            openModal('addFuelModal');
-        }
-
-        function calcConsumption() {
-            const liters = parseFloat(document.getElementById('fuelLiters').value) || 0;
-            const price = parseFloat(document.getElementById('fuelPrice').value) || 0;
-            
-            if (liters > 0 && price > 0) {
-                document.getElementById('fuelTotalCost').value = (liters * price).toFixed(2);
-            }
-            
-            // Calculate consumption if we have previous entry
-            const carId = document.getElementById('fuelCarId').value;
-            const currentMileage = parseInt(document.getElementById('fuelMileage').value) || 0;
-            
-            if (carId && currentMileage > 0 && liters > 0) {
-                const previousEntries = fuelEntries
-                    .filter(f => f.carId === parseInt(carId) && f.mileage < currentMileage)
-                    .sort((a, b) => b.mileage - a.mileage);
+            if (cars.length > 0) {
+                const totalKm = cars.reduce((sum, c) => sum + c.mileage, 0);
+                if (totalKm > 0) costPerKm = total / totalKm;
                 
-                if (previousEntries.length > 0) {
-                    const kmDriven = currentMileage - previousEntries[0].mileage;
-                    const consumption = (liters / kmDriven) * 100;
-                    document.getElementById('calcConsumption').textContent = consumption.toFixed(1) + ' l/100km';
+                const oldestCar = cars.sort((a, b) => new Date(a.added) - new Date(b.added))[0];
+                if (oldestCar) {
+                    const months = Math.max(1, Math.ceil((new Date() - new Date(oldestCar.added)) / (1000 * 60 * 60 * 24 * 30)));
+                    costPerMonth = total / months;
                 }
             }
-        }
-
-        function reverseCalc() {
-            const total = parseFloat(document.getElementById('fuelTotalCost').value) || 0;
-            const liters = parseFloat(document.getElementById('fuelLiters').value) || 0;
             
-            if (total > 0 && liters > 0) {
-                document.getElementById('fuelPrice').value = (total / liters).toFixed(3);
+            document.getElementById('totalCosts').textContent = total.toFixed(0) + ' €';
+            document.getElementById('yearCosts').textContent = yearTotal.toFixed(0) + ' €';
+            document.getElementById('costPerKm').textContent = costPerKm.toFixed(2) + ' €';
+            document.getElementById('costPerMonth').textContent = costPerMonth.toFixed(0) + ' €';
+            
+            // Fuel stats
+            if (fuelEntries.length > 0) {
+                const totalLiters = fuelEntries.reduce((sum, f) => sum + f.liters, 0);
+                const avgConsumption = fuelEntries.reduce((sum, f) => sum + f.consumption, 0) / fuelEntries.length;
+                const last = fuelEntries[fuelEntries.length - 1];
+                
+                document.getElementById('avgConsumption').textContent = avgConsumption.toFixed(1);
+                document.getElementById('lastConsumption').textContent = last.consumption.toFixed(1);
+                document.getElementById('totalFuel').textContent = totalLiters.toFixed(0);
+                document.getElementById('fuelCosts').textContent = totalFuel.toFixed(0);
             }
         }
 
-        function saveFuelEntry(event) {
-            event.preventDefault();
+        // Fuel
+        function openFuelModal() {
+            if (cars.length === 0) {
+                showToast('Zuerst Auto hinzufügen!');
+                return;
+            }
+            const carId = cars[0].id; // Default to first car for mobile simplicity
+            const liters = prompt('Getankte Liter:');
+            if (!liters) return;
             
-            const carId = parseInt(document.getElementById('fuelCarId').value);
-            const mileage = parseInt(document.getElementById('fuelMileage').value);
-            const liters = parseFloat(document.getElementById('fuelLiters').value);
+            const price = prompt('Preis pro Liter (€):') || '0';
+            const mileage = prompt('Aktueller Kilometerstand:');
+            if (!mileage) return;
             
             // Calculate consumption
             let consumption = 0;
-            const previousEntries = fuelEntries
-                .filter(f => f.carId === carId && f.mileage < mileage)
-                .sort((a, b) => b.mileage - a.mileage);
+            const previous = fuelEntries
+                .filter(f => f.carId === carId)
+                .sort((a, b) => b.mileage - a.mileage)[0];
             
-            if (previousEntries.length > 0) {
-                const kmDriven = mileage - previousEntries[0].mileage;
-                consumption = (liters / kmDriven) * 100;
+            if (previous) {
+                const km = parseInt(mileage) - previous.mileage;
+                consumption = (parseFloat(liters) / km) * 100;
             }
             
-            const entry = {
+            fuelEntries.push({
                 id: Date.now(),
                 carId: carId,
-                date: document.getElementById('fuelDate').value,
-                mileage: mileage,
-                liters: liters,
-                pricePerLiter: parseFloat(document.getElementById('fuelPrice').value) || 0,
-                totalCost: parseFloat(document.getElementById('fuelTotalCost').value) || 0,
-                station: document.getElementById('fuelStation').value,
-                fuelType: document.getElementById('fuelType').value,
+                date: new Date().toISOString().split('T')[0],
+                mileage: parseInt(mileage),
+                liters: parseFloat(liters),
+                pricePerLiter: parseFloat(price),
+                totalCost: parseFloat(liters) * parseFloat(price),
                 consumption: consumption
-            };
+            });
             
-            fuelEntries.push(entry);
             localStorage.setItem('fuelEntries', JSON.stringify(fuelEntries));
             
             // Update car mileage
             const car = cars.find(c => c.id === carId);
-            if (car && mileage > car.mileage) {
-                car.mileage = mileage;
+            if (car && parseInt(mileage) > car.mileage) {
+                car.mileage = parseInt(mileage);
                 localStorage.setItem('cars', JSON.stringify(cars));
                 renderGarage();
             }
             
-            closeModal('addFuelModal');
-            document.getElementById('addFuelForm').reset();
-            document.getElementById('calcConsumption').textContent = '-- l/100km';
-            
+            showToast('Tankfüllung gespeichert!');
             if (document.getElementById('costs').classList.contains('active')) {
                 loadCosts();
             }
-            showToast('Tankfüllung gespeichert!');
         }
 
-        // Trip Management
+        // Trips
         function openTripModal() {
             if (cars.length === 0) {
-                showToast('Bitte zuerst ein Fahrzeug hinzufügen!');
+                showToast('Zuerst Auto hinzufügen!');
                 return;
             }
-            document.getElementById('tripDate').valueAsDate = new Date();
-            openModal('addTripModal');
-        }
-
-        function calcTripKm() {
-            const start = parseInt(document.getElementById('tripKmStart').value) || 0;
-            const end = parseInt(document.getElementById('tripKmEnd').value) || 0;
-            const distance = Math.max(0, end - start);
             
-            document.getElementById('tripDistance').textContent = distance;
-            document.getElementById('tripProgress').style.width = Math.min(100, (distance / 1000) * 100) + '%';
-        }
-
-        function saveTrip(event) {
-            event.preventDefault();
+            const type = confirm('Geschäftliche Fahrt?') ? 'business' : 'private';
+            const start = prompt('Startort:');
+            const end = prompt('Zielort:');
+            const km = prompt('Gefahrene Kilometer:');
             
-            const entry = {
-                id: Date.now(),
-                carId: parseInt(document.getElementById('tripCarId').value),
-                date: document.getElementById('tripDate').value,
-                type: document.getElementById('tripType').value,
-                start: document.getElementById('tripStart').value,
-                end: document.getElementById('tripEnd').value,
-                kmStart: parseInt(document.getElementById('tripKmStart').value),
-                kmEnd: parseInt(document.getElementById('tripKmEnd').value),
-                distance: parseInt(document.getElementById('tripKmEnd').value) - parseInt(document.getElementById('tripKmStart').value),
-                purpose: document.getElementById('tripPurpose').value
-            };
-            
-            trips.push(entry);
-            localStorage.setItem('trips', JSON.stringify(trips));
-            
-            closeModal('addTripModal');
-            document.getElementById('addTripForm').reset();
-            document.getElementById('tripDistance').textContent = '0';
-            document.getElementById('tripProgress').style.width = '0%';
-            
-            if (document.getElementById('trips').classList.contains('active')) {
-                loadTrips();
+            if (km) {
+                trips.push({
+                    id: Date.now(),
+                    carId: cars[0].id,
+                    date: new Date().toISOString().split('T')[0],
+                    type: type,
+                    start: start || '',
+                    end: end || '',
+                    distance: parseInt(km)
+                });
+                localStorage.setItem('trips', JSON.stringify(trips));
+                showToast('Fahrt gespeichert!');
+                if (document.getElementById('trips').classList.contains('active')) {
+                    loadTrips();
+                }
             }
-            showToast('Fahrt gespeichert!');
         }
 
         function loadTrips() {
-            const carId = document.getElementById('tripCarSelect').value;
-            const typeFilter = document.getElementById('tripTypeFilter').value;
-            
-            let filtered = trips;
-            if (carId) filtered = filtered.filter(t => t.carId === parseInt(carId));
-            if (typeFilter) filtered = filtered.filter(t => t.type === typeFilter);
-            
-            const sorted = filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            const totalKm = filtered.reduce((sum, t) => sum + t.distance, 0);
-            const businessKm = filtered.filter(t => t.type === 'business').reduce((sum, t) => sum + t.distance, 0);
-            const privateKm = filtered.filter(t => t.type === 'private').reduce((sum, t) => sum + t.distance, 0);
-            
-            document.getElementById('totalTripKm').textContent = totalKm.toLocaleString();
-            document.getElementById('businessKm').textContent = businessKm.toLocaleString();
-            document.getElementById('privateKm').textContent = privateKm.toLocaleString();
+            const sorted = trips.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const totalKm = trips.reduce((sum, t) => sum + t.distance, 0);
+            const businessKm = trips.filter(t => t.type === 'business').reduce((sum, t) => sum + t.distance, 0);
             
             document.getElementById('tripList').innerHTML = sorted.map(t => `
                 <div class="trip-item">
                     <div>
-                        <strong>${new Date(t.date).toLocaleDateString('de-DE')}</strong>
+                        <div style="font-weight: 600;">${new Date(t.date).toLocaleDateString('de-DE')}</div>
                         <div style="color: #666; font-size: 14px;">
                             ${t.start} → ${t.end} (${t.distance} km)
-                            ${t.purpose ? '<br>Zweck: ' + t.purpose : ''}
                         </div>
-                        <span style="display: inline-block; margin-top: 5px; padding: 2px 8px; background: ${t.type === 'business' ? '#dbeafe' : '#fce7f3'}; color: ${t.type === 'business' ? '#1d4ed8' : '#be185d'}; border-radius: 12px; font-size: 12px;">
+                        <span style="display: inline-block; margin-top: 5px; padding: 4px 12px; background: ${t.type === 'business' ? '#dbeafe' : '#fce7f3'}; color: ${t.type === 'business' ? '#1d4ed8' : '#be185d'}; border-radius: 20px; font-size: 12px; font-weight: 500;">
                             ${t.type === 'business' ? 'Geschäftlich' : 'Privat'}
                         </span>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="font-weight: bold;">${cars.find(c => c.id === t.carId)?.brand || ''}</div>
-                        <div style="font-size: 12px; color: #666;">${t.kmStart} - ${t.kmEnd}</div>
                     </div>
                 </div>
             `).join('') || '<p>Keine Fahrten vorhanden.</p>';
         }
 
-        function exportTrips() {
-            const carId = document.getElementById('tripCarSelect').value;
-            let filtered = trips;
-            if (carId) filtered = filtered.filter(t => t.carId === parseInt(carId));
-            
-            let csv = 'Datum;Fahrzeug;Art;Start;Ziel;Distanz;Zweck\n';
-            filtered.forEach(t => {
-                const car = cars.find(c => c.id === t.carId);
-                csv += `${t.date};${car?.brand || ''} ${car?.model || ''};${t.type === 'business' ? 'Geschäftlich' : 'Privat'};${t.start};${t.end};${t.distance};${t.purpose}\n`;
-            });
-            
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'fahrtenbuch.csv';
-            link.click();
-            
-            showToast('Fahrtenbuch exportiert!');
-        }
-
-        // Document Management
+        // Documents
         function loadDocuments() {
             const grid = document.getElementById('documentGrid');
+            const icons = {
+                'zulassung': '📋', 'brief': '📄', 'versicherung': '🛡️',
+                'tuev': '✓', 'rechnung': '💶', 'vertrag': '📝', 'service': '🔧', 'sonstiges': '📎'
+            };
             
             grid.innerHTML = documents.map(doc => {
                 const car = cars.find(c => c.id === doc.carId);
@@ -2497,213 +1757,158 @@
                 
                 return `
                     <div class="document-card" style="${isExpiring ? 'border: 2px solid var(--danger);' : ''}">
-                        <div class="document-icon">${getDocIcon(doc.type)}</div>
-                        <div style="font-weight: 600; margin-bottom: 5px;">${getDocTypeName(doc.type)}</div>
-                        <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
-                            ${car?.brand || ''} ${car?.model || ''}
-                        </div>
-                        ${doc.expiry ? `<div style="font-size: 12px; color: ${isExpiring ? 'var(--danger)' : '#666'};">
-                            ${isExpiring ? '⚠️ ' : ''}Ablauf: ${new Date(doc.expiry).toLocaleDateString('de-DE')}
-                        </div>` : ''}
+                        <div style="font-size: 32px;">${icons[doc.type] || '📄'}</div>
+                        <div style="font-weight: 600; font-size: 14px;">${doc.type}</div>
+                        <div style="font-size: 12px; color: #666;">${car?.brand || ''}</div>
+                        ${doc.expiry ? `<div style="font-size: 11px; color: ${isExpiring ? 'var(--danger)' : '#666'};">${new Date(doc.expiry).toLocaleDateString('de-DE')}</div>` : ''}
                     </div>
                 `;
-            }).join('');
-            
-            // Load expiring docs
-            const expiring = documents.filter(d => d.expiry && new Date(d.expiry) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
-            document.getElementById('expiringDocs').innerHTML = expiring.map(doc => {
-                const car = cars.find(c => c.id === doc.carId);
-                const daysLeft = Math.ceil((new Date(doc.expiry) - new Date()) / (1000 * 60 * 60 * 24));
-                
-                return `
-                    <div class="notification-item ${daysLeft < 0 ? 'warning' : ''}">
-                        <strong>${getDocTypeName(doc.type)}</strong> für ${car?.brand || ''} ${car?.model || ''}<br>
-                        ${daysLeft < 0 ? 'Abgelaufen seit' : 'Läuft ab in'} ${Math.abs(daysLeft)} Tagen
-                    </div>
-                `;
-            }).join('') || '<p>Keine ablaufenden Dokumente.</p>';
+            }).join('') || '<p style="grid-column: 1/-1; text-align: center; color: #666;">Keine Dokumente</p>';
         }
 
-        function getDocIcon(type) {
-            const icons = {
-                'zulassung': '📋',
-                'brief': '📄',
-                'versicherung': '🛡️',
-                'tuev': '✓',
-                'rechnung': '💶',
-                'vertrag': '📝',
-                'service': '🔧',
-                'sonstiges': '📎'
-            };
-            return icons[type] || '📄';
-        }
-
-        function getDocTypeName(type) {
-            const names = {
-                'zulassung': 'Fahrzeugschein',
-                'brief': 'Fahrzeugbrief',
-                'versicherung': 'Versicherung',
-                'tuev': 'TÜV-Bericht',
-                'rechnung': 'Rechnung',
-                'vertrag': 'Vertrag',
-                'service': 'Serviceheft',
-                'sonstiges': 'Sonstiges'
-            };
-            return names[type] || type;
-        }
-
-        function saveDocument(event) {
-            event.preventDefault();
-            
-            const fileInput = document.getElementById('docFile');
-            const file = fileInput.files[0];
-            
-            // In a real app, you would upload to server here
-            // For demo, we just store metadata
-            const doc = {
-                id: Date.now(),
-                carId: parseInt(document.getElementById('docCarId').value),
-                type: document.getElementById('docType').value,
-                expiry: document.getElementById('docExpiry').value,
-                reminder: parseInt(document.getElementById('docReminder').value),
-                notes: document.getElementById('docNotes').value,
-                filename: file.name,
-                uploaded: new Date().toISOString()
-            };
-            
-            documents.push(doc);
-            localStorage.setItem('documents', JSON.stringify(documents));
-            
-            closeModal('uploadDocModal');
-            document.getElementById('uploadDocForm').reset();
-            loadDocuments();
-            checkReminders();
-            showToast('Dokument hochgeladen!');
-        }
-
-        // Notifications & Reminders
+        // Notifications
         function checkReminders() {
             const notifications = [];
-            const today = new Date();
             
-            // Check TÜV dates
             cars.forEach(car => {
                 if (car.tuv) {
-                    const tuvDate = new Date(car.tuv);
-                    const daysLeft = Math.ceil((tuvDate - today) / (1000 * 60 * 60 * 24));
-                    
-                    if (daysLeft < 30 && daysLeft > -1) {
-                        notifications.push({
-                            type: 'warning',
-                            text: `TÜV für ${car.brand} ${car.model} läuft in ${daysLeft} Tagen ab!`
-                        });
-                    } else if (daysLeft < 0) {
-                        notifications.push({
-                            type: 'danger',
-                            text: `TÜV für ${car.brand} ${car.model} ist abgelaufen!`
-                        });
+                    const days = Math.ceil((new Date(car.tuv) - new Date()) / (1000 * 60 * 60 * 24));
+                    if (days < 30 && days > -1) {
+                        notifications.push({ type: 'warning', text: `TÜV ${car.brand} ${car.model} in ${days} Tagen` });
+                    } else if (days < 0) {
+                        notifications.push({ type: 'danger', text: `TÜV ${car.brand} ${car.model} ABGELAUFEN!` });
                     }
                 }
             });
             
-            // Check document expiry
-            documents.forEach(doc => {
-                if (doc.expiry && doc.reminder > 0) {
-                    const expiryDate = new Date(doc.expiry);
-                    const reminderDate = new Date(expiryDate.getTime() - doc.reminder * 24 * 60 * 60 * 1000);
-                    
-                    if (today >= reminderDate && today < expiryDate) {
-                        const car = cars.find(c => c.id === doc.carId);
-                        notifications.push({
-                            type: 'info',
-                            text: `${getDocTypeName(doc.type)} für ${car?.brand || ''} läuft bald ab`
-                        });
-                    }
-                }
-            });
-            
-            // Update notification badge
-            const badge = document.getElementById('notifCount');
+            const badge = document.getElementById('notifBadge');
             if (notifications.length > 0) {
                 badge.style.display = 'flex';
-                badge.textContent = notifications.length;
+                document.getElementById('notificationList').innerHTML = notifications.map(n => `
+                    <div class="notification-item ${n.type === 'danger' ? 'warning' : ''}">
+                        ${n.text}
+                    </div>
+                `).join('');
             } else {
                 badge.style.display = 'none';
+                document.getElementById('notificationList').innerHTML = '<p style="color: #666;">Keine Erinnerungen</p>';
             }
-            
-            // Update notification panel
-            document.getElementById('notificationList').innerHTML = notifications.map(n => `
-                <div class="notification-item ${n.type === 'danger' ? 'warning' : n.type === 'success' ? 'success' : ''}">
-                    ${n.text}
-                </div>
-            `).join('') || '<p>Keine aktuellen Erinnerungen.</p>';
         }
 
         function toggleNotifications() {
-            const panel = document.getElementById('notificationPanel');
-            panel.classList.toggle('show');
+            document.getElementById('notificationPanel').classList.toggle('show');
+            document.getElementById('notifOverlay').classList.toggle('show');
         }
 
-        // Workshop Finder
+        // Install
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        showToast('App wird installiert...');
+                    }
+                    deferredPrompt = null;
+                    document.getElementById('installBanner').classList.remove('show');
+                });
+            }
+        }
+
+        function dismissInstall() {
+            document.getElementById('installBanner').classList.remove('show');
+        }
+
+        // Pull to Refresh
+        function setupPullToRefresh() {
+            let startY = 0;
+            const ptr = document.getElementById('ptrIndicator');
+            
+            document.addEventListener('touchstart', (e) => {
+                if (window.scrollY === 0) {
+                    startY = e.touches[0].pageY;
+                }
+            });
+            
+            document.addEventListener('touchmove', (e) => {
+                if (startY > 0 && window.scrollY === 0) {
+                    const diff = e.touches[0].pageY - startY;
+                    if (diff > 100) {
+                        ptr.classList.add('show');
+                    }
+                }
+            });
+            
+            document.addEventListener('touchend', () => {
+                if (ptr.classList.contains('show')) {
+                    setTimeout(() => {
+                        ptr.classList.remove('show');
+                        location.reload();
+                    }, 500);
+                }
+                startY = 0;
+            });
+        }
+
+        // Offline Detection
+        function setupOfflineDetection() {
+            const banner = document.getElementById('offlineBanner');
+            
+            window.addEventListener('online', () => {
+                banner.classList.remove('show');
+                showToast('Online - Daten synchronisiert');
+            });
+            
+            window.addEventListener('offline', () => {
+                banner.classList.add('show');
+            });
+            
+            if (!navigator.onLine) {
+                banner.classList.add('show');
+            }
+        }
+
+        // Workshop
         function findWorkshops(type) {
             const results = document.getElementById('workshopResults');
-            
             const workshops = type === 'atu' ? [
-                { name: 'ATU München Sendling', address: 'Meindlstraße 12, 81379 München', phone: '089 12345678', distance: '2.3 km', rating: 4.2 },
-                { name: 'ATU München Pasing', address: 'Landsberger Straße 456, 80689 München', phone: '089 87654321', distance: '5.1 km', rating: 4.0 },
-                { name: 'ATU München Nord', address: 'Schleißheimer Straße 123, 80809 München', phone: '089 11223344', distance: '8.7 km', rating: 4.3 }
+                { name: 'ATU München', address: 'Meindlstraße 12', distance: '2.3 km', phone: '089 123456' },
+                { name: 'ATU Pasing', address: 'Landsberger Str. 456', distance: '5.1 km', phone: '089 654321' }
             ] : [
-                { name: 'PIT STOP München West', address: 'Ridlerstraße 45, 80339 München', phone: '089 55556666', distance: '3.2 km', rating: 4.5 },
-                { name: 'PIT STOP München Ost', address: 'Einsteinstraße 88, 81675 München', phone: '089 77778888', distance: '6.5 km', rating: 4.4 },
-                { name: 'PIT STOP München Süd', address: 'Plinganserstraße 67, 81369 München', phone: '089 99990000', distance: '4.8 km', rating: 4.6 }
+                { name: 'PIT STOP West', address: 'Ridlerstraße 45', distance: '3.2 km', phone: '089 555566' },
+                { name: 'PIT STOP Ost', address: 'Einsteinstr. 88', distance: '6.5 km', phone: '089 777788' }
             ];
             
-            results.innerHTML = `
-                <h3 style="margin-bottom: 20px;">${type === 'atu' ? 'ATU' : 'PIT STOP'} Filialen in deiner Nähe</h3>
-                <div style="display: grid; gap: 15px;">
-                    ${workshops.map(w => `
-                        <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                            <div style="display: flex; justify-content: space-between; align-items: start;">
-                                <div>
-                                    <h4 style="margin-bottom: 5px;">${w.name}</h4>
-                                    <p style="color: #6b7280; font-size: 14px;">📍 ${w.address}</p>
-                                    <p style="color: #6b7280; font-size: 14px;">📞 ${w.phone}</p>
-                                    <div class="rating" style="margin-top: 5px;">${'⭐'.repeat(Math.floor(w.rating))} (${w.rating})</div>
-                                </div>
-                                <div style="text-align: right;">
-                                    <span style="background: #dbeafe; color: #1d4ed8; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 600;">
-                                        ${w.distance}
-                                    </span>
-                                    <button class="btn btn-primary" style="margin-top: 10px; font-size: 14px; padding: 8px 16px;" onclick="bookAppointment('${w.name}')">
-                                        Termin buchen
-                                    </button>
-                                </div>
-                            </div>
+            results.innerHTML = workshops.map(w => `
+                <div style="background: white; padding: 20px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">${w.name}</div>
+                            <div style="color: #666; font-size: 14px;">${w.address}</div>
+                            <div style="color: #666; font-size: 14px;">📞 ${w.phone}</div>
                         </div>
-                    `).join('')}
+                        <div style="text-align: right;">
+                            <span style="background: #dbeafe; color: #1d4ed8; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;">${w.distance}</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="width: 100%; margin-top: 15px;" onclick="showToast('Termin angefragt!')">
+                        Termin buchen
+                    </button>
                 </div>
-            `;
+            `).join('');
         }
 
-        function bookAppointment(workshop) {
-            showToast(`Termin bei ${workshop} angefragt! (Demo)`);
-        }
-
-        // Utility
+        // Toast
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
+            setTimeout(() => toast.classList.remove('show'), 2500);
         }
 
         // Close modals on outside click
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
-                event.target.classList.remove('active');
-            }
-            if (!event.target.closest('.nav-btn') && !event.target.closest('#notificationPanel')) {
-                document.getElementById('notificationPanel').classList.remove('show');
+                closeModal(event.target.id);
             }
         }
     </script>
